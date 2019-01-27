@@ -6,6 +6,7 @@
 
 #include "acfile\arithmetic_codec.h"
 #include "BMP.h"
+#include "preprocess.h"
 
 #pragma warning(disable: 4996)
 
@@ -104,8 +105,9 @@ int encode_odd(FILE *fp, UINT8 **R, UINT8 **G, UINT8 **B, int height, int width)
 }
 
 void main(int argc, char *argv[]) {
-	//char infile[] = "lena.bmp";
-	char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
+	
+	//char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
+	char infile[] = "suzy.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
@@ -120,18 +122,18 @@ void main(int argc, char *argv[]) {
 	assert(height% 2 == 0);
 	assert(width % 2 == 0);
 
-	unsigned char **R2 = alloc2D(height, width/2);
-	unsigned char **G2 = alloc2D(height, width/2);
-	unsigned char **B2 = alloc2D(height, width/2);
+	unsigned char **R2 = alloc2D(height/2, width);
+	unsigned char **G2 = alloc2D(height/2, width);
+	unsigned char **B2 = alloc2D(height/2, width);
 
 	for (int y = 0; y < height; y++) {
 		for (int x =0; x < width ; x+=1) {
-			R2[y][x / 2] = R[y][x];
-			G2[y][x / 2] = G[y][x];
-			B2[y][x / 2] = B[y][x];
+			R2[y/2][x] = R[y][x];
+			G2[y/2][x] = G[y][x];
+			B2[y/2][x] = B[y][x];
 		}
 	}
-	bmpWrite(outfile, R2, G2, B2, height/2, width/1);
+	bmpWrite(outfile, R2, G2, B2, height/2, width);
 
 	if (!(fp = fopen(codefile, "wb"))) {
 		fprintf(stderr, "Code file open error.\n");
