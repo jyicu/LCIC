@@ -2,9 +2,10 @@
 #include <string.h>
 
 
-unsigned char **alloc2D(int height, int width) {
-	unsigned char *arr = new unsigned char[height*width];
-	unsigned char **pp = new unsigned char*[height];
+int **alloc2D(int height, int width) {
+
+	signed int *arr = new signed int[height*width];
+	signed int **pp = new signed int*[height];
 	memset(arr, 0, height*width);
 
 	for (int y = 0; y < height; y++)
@@ -13,13 +14,13 @@ unsigned char **alloc2D(int height, int width) {
 	return pp;
 }
 
-void free2D(unsigned char **p) {
+void free2D(int **p) {
 	delete(p[0]);
 	delete(p);
 }
 
 
-void bmpRead(char filename[], unsigned char ***red, unsigned char ***green, unsigned char ***blue, int *height, int *width) {
+void bmpRead(char filename[], int ***red, int ***green, int ***blue, int *height, int *width){
 	
 	FILE *f; 
 	fopen_s(&f, filename, "rb");
@@ -60,7 +61,7 @@ void bmpRead(char filename[], unsigned char ***red, unsigned char ***green, unsi
 }
 
 
-void bmpWrite(char filename[], unsigned char **red, unsigned char **green, unsigned char **blue, int h, int w){
+void bmpWrite(char filename[], int **red, int **green, int **blue, int h, int w){
 	FILE *f;
 	int filesize = 54 + 3 * w*h;  //w is your image width, h is image height, both int
 

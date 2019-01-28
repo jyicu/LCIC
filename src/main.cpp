@@ -38,7 +38,7 @@ void encodeMag(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
 	}
 }
 
-int encode_odd(FILE *fp, UINT8 **R, UINT8 **G, UINT8 **B, int height, int width) {
+int encode_odd(FILE *fp, int **R, int **G, int **B, int height, int width) {
 	Arithmetic_Codec coder;
 	Adaptive_Data_Model dm[NUM_CTX];
 	int ctxCnt[NUM_CTX];
@@ -88,6 +88,7 @@ int encode_odd(FILE *fp, UINT8 **R, UINT8 **G, UINT8 **B, int height, int width)
 
 			//int ctx = CLIP(10 * (ABS(CC) - 0.4), 0, NUM_CTX - 1);
 			int ctx = CLIP(ABS(R[y][x-1]-R[y][x+1])/4, 0, NUM_CTX - 1);
+			
 			encodeMag(sym, &coder, &dm[ctx]);
 
 			numPix++;
@@ -110,11 +111,12 @@ void main(int argc, char *argv[]) {
 	char infile[] = "suzy.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
+	char codefile_out[] = "code_out.bin";
 	FILE *fp;
+	FILE *fp2;
 
-	unsigned char **R;
-	unsigned char **G;
-	unsigned char **B;
+	int **R, **G, **B;
+
 	int height, width;
 
 	bmpRead(infile, &R, &G, &B, &height, &width);
@@ -122,9 +124,11 @@ void main(int argc, char *argv[]) {
 	assert(height% 2 == 0);
 	assert(width % 2 == 0);
 
-	unsigned char **R2 = alloc2D(height/2, width);
-	unsigned char **G2 = alloc2D(height/2, width);
-	unsigned char **B2 = alloc2D(height/2, width);
+	check_result();
+
+	int **R2 = alloc2D(height/2, width);
+	int **G2 = alloc2D(height/2, width);
+	int **B2 = alloc2D(height/2, width);
 
 	for (int y = 0; y < height; y++) {
 		for (int x =0; x < width ; x+=1) {
@@ -140,7 +144,13 @@ void main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
+	if (!(fp2 = fopen(codefile_out, "wb"))) {
+		fprintf(stderr, "Code file open error.\n");
+		exit(-1);
+	}
+
 	int bytes = encode_odd(fp, R, G, B, height, width);
+
 //	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / (height - 2) / (width / 2-1));
 
 	fclose(fp);
