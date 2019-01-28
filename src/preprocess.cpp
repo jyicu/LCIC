@@ -115,7 +115,7 @@ void RGB2YUV(int ***R, int ***G, int ***B, int ***Y, int ***U, int ***V, int *he
 			g = (*G)[y][x];
 			b = (*B)[y][x];
 
-			(*Y)[y][x] = int(floor((float)(r + 2 * g + b) / 4));
+			(*Y)[y][x] = (r + 2 * g + b) >> 2;
 			(*U)[y][x] = r - g;
 			(*V)[y][x] = b - g;
 		}
@@ -162,22 +162,19 @@ void YUV2RGB(int ***Y, int ***U, int ***V, int ***R, int ***G, int ***B, int *he
 		*height : height of image
 		*width  : width of image
 	@output
-		***ODD1, ODD2, EVEN2  : Decomposed ODD1, ODD2, EVEN2
+		***ODD1, ODD2, EVEN1, EVEN2  : Decomposed ODD1, ODD2, EVEN1, EVEN2
 */
-void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN2, int *height, int *width)
+void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN1, int ***EVEN2, int *height, int *width)
 {
-	int **EVEN1;
-
-	split_image(C, ODD1, &EVEN1, height, width);
+	split_image(C, ODD1, EVEN1, height, width);
 
 	int **EVEN1_rotate;
 	int half_height = *height / 2;
 
-	rotate_image(&EVEN1, &EVEN1_rotate, CLOCKWISE, &half_height, width);
+	rotate_image(EVEN1, &EVEN1_rotate, CLOCKWISE, &half_height, width);
 
 	split_image(&EVEN1_rotate, ODD2, EVEN2, width, &half_height);
 
-	free(EVEN1);
 	free(EVEN1_rotate);
 }
 
@@ -190,9 +187,10 @@ void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN2, int *
 		***Y                : Decomposed Y (h, w)
 		***U_ODD1, V_ODD1   : Decomposed U,V Odd1 (h/2, w)
 		***U_ODD2, V_ODD2   : Decomposed U,V Odd2 (w/2, h/2)
+		***U_EVEN1, V_EVEN1 : Decomposed U,V Even2 (h/2, w)
 		***U_EVEN2, V_EVEN2 : Decomposed U,V Even2 (w/2, h/2)
 */
-void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN2)
+void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***U_EVEN1, int***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN1, int ***V_EVEN2)
 {
 	// Read in image file to RGB channels
 	int **R, **G, **B;
@@ -209,8 +207,8 @@ void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int***U
 	RGB2YUV(&R, &G, &B, Y, &U, &V, &height, &width);
 
 	// Decompose U,V channels into odd1, odd2, even2 images
-	image_decomposition(&U, U_ODD1, U_ODD2, U_EVEN2, &height, &width);
-	image_decomposition(&V, V_ODD1, V_ODD2, V_EVEN2, &height, &width);
+	image_decomposition(&U, U_ODD1, U_ODD2, U_EVEN1, U_EVEN2, &height, &width);
+	image_decomposition(&V, V_ODD1, V_ODD2, V_EVEN1, V_EVEN2, &height, &width);
 
 	// free memory
 	free(R);
@@ -342,28 +340,30 @@ void check_result() {
 	bmpWrite(color_file, R_n, G_n, B_n, height, width);
 
 	// Image Decomposition Check
-	int **ODD1_R, **ODD2_R, **EVEN2_R;
-	int **ODD1_G, **ODD2_G, **EVEN2_G;
-	int **ODD1_B, **ODD2_B, **EVEN2_B;
+	int **ODD1_R, **ODD2_R, **EVEN1_R, **EVEN2_R;
+	int **ODD1_G, **ODD2_G, **EVEN1_G, **EVEN2_G;
+	int **ODD1_B, **ODD2_B, **EVEN1_B, **EVEN2_B;
 
-	image_decomposition(&R, &ODD1_R, &ODD2_R, &EVEN2_R, &height, &width);
-	image_decomposition(&G, &ODD1_G, &ODD2_G, &EVEN2_G, &height, &width);
-	image_decomposition(&B, &ODD1_B, &ODD2_B, &EVEN2_B, &height, &width);
+	image_decomposition(&R, &ODD1_R, &ODD2_R, &EVEN1_R, &EVEN2_R, &height, &width);
+	image_decomposition(&G, &ODD1_G, &ODD2_G, &EVEN1_G, &EVEN2_G, &height, &width);
+	image_decomposition(&B, &ODD1_B, &ODD2_B, &EVEN1_B, &EVEN2_B, &height, &width);
 
 	char odd1_file[] = "result/Odd1.bmp";
 	char odd2_file[] = "result/Odd2.bmp";
+	char even1_file[] = "result/Even1.bmp";
 	char even2_file[] = "result/Even2.bmp";
 
 	bmpWrite(odd1_file, ODD1_R, ODD1_G, ODD1_B, height/2, width);
 	bmpWrite(odd2_file, ODD2_R, ODD2_G, ODD2_B, width/2, height/2);
+	bmpWrite(even1_file, EVEN1_R, EVEN1_G, EVEN1_B, height/2, width);
 	bmpWrite(even2_file, EVEN2_R, EVEN2_G, EVEN2_B, width/2, height/2);
 
 	// Preprocess Check
-	int **Y_, **U_ODD1_, **U_ODD2_, **U_EVEN2_, **V_ODD1_, **V_ODD2_, **V_EVEN2_;
+	int **Y_, **U_ODD1_, **U_ODD2_, **U_EVEN1_, **U_EVEN2_, **V_ODD1_, **V_ODD2_, **V_EVEN1_, **V_EVEN2_;
 
 	char preprocess_file[] = "result/Preprocess.bmp";
 
-	preprocess(infile, &Y_, &U_ODD1_, &U_ODD2_, &U_EVEN2_, &V_ODD1_, &V_ODD2_, &V_EVEN2_);
+	preprocess(infile, &Y_, &U_ODD1_, &U_ODD2_, &U_EVEN1_, &U_EVEN2_, &V_ODD1_, &V_ODD2_, &V_EVEN1_, &V_EVEN2_);
 	postprocess(preprocess_file, &Y_, &U_ODD1_, &U_ODD2_, &U_EVEN2_, &V_ODD1_, &V_ODD2_, &V_EVEN2_, &height, &width);
 
 	// Free
@@ -397,14 +397,19 @@ void check_result() {
 	free(ODD2_R);
 	free(ODD2_G);
 	free(ODD2_B);
+	free(EVEN1_R);
+	free(EVEN1_G);
+	free(EVEN1_B);
 	free(EVEN2_R);
 	free(EVEN2_G);
 	free(EVEN2_B);
 	free(Y_);
 	free(U_ODD1_);
 	free(U_ODD2_);
+	free(U_EVEN1_);
 	free(U_EVEN2_);
 	free(V_ODD1_);
 	free(V_ODD2_);
+	free(V_EVEN1_);
 	free(V_EVEN2_);
 }
