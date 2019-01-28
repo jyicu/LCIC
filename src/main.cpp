@@ -113,7 +113,6 @@ void main(int argc, char *argv[]) {
 	char codefile[] = "code.bin";
 	char codefile_out[] = "code_out.bin";
 	FILE *fp;
-	FILE *fp2;
 
 	int **R, **G, **B;
 
@@ -140,11 +139,6 @@ void main(int argc, char *argv[]) {
 	bmpWrite(outfile, R2, G2, B2, height/2, width);
 
 	if (!(fp = fopen(codefile, "wb"))) {
-		fprintf(stderr, "Code file open error.\n");
-		exit(-1);
-	}
-
-	if (!(fp2 = fopen(codefile_out, "wb"))) {
 		fprintf(stderr, "Code file open error.\n");
 		exit(-1);
 	}
