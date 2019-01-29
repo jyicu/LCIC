@@ -37,7 +37,6 @@ void split_image(unsigned char ***C, int ***ODD, int ***EVEN, int *height, int *
 }
 
 
-
 inline bool dir(int x_o, int T, int x_v, int x_h) {
 	return ((ABS(x_o - x_v)) > (ABS(x_o - x_h) + T) ? (1) : (0));
 }
@@ -61,8 +60,6 @@ Encoder::~Encoder() {
 	delete[] q;
 	delete[] Dir;
 }
-
-
 
 void Encoder::init() {
 	//split image()
@@ -106,6 +103,7 @@ int Encoder::context(int x, int y) {
 	return K - 1;
 }
 
+
 int Encoder::run() {
 	int y, x;
 	int numPix = 0;
@@ -115,14 +113,64 @@ int Encoder::run() {
 	int sym_counter[512] = { 0 };
 	int context_counter[6] = { 0 };
 
-	for (y = 1; y < height-1; y++) {
-		for (x = 1; x < width - 1; x++) {
+	y = 0; x = 0;
+	pred = ROUND(0.5*(X_e[0][0] + X_e[1][0]));
+	Dir[0][0] = 0;
+	{
+		int x_o = X_o[0][0];
+		int res = x_o - pred;
+		int sym = res >= 0 ? 2 * res : -2 * res - 1;
+		int ctx = context(x, y);
+
+		Dir_counter[Dir[y][x]]++;
+		sym_counter[sym]++;
+		context_counter[ctx]++;
+
+		// TODO : Arithmetic coding for sym
+
+		numPix++;
+	}
+	for (x = 1; x < width; x++) {
+		int x_o = X_o[0][x];
+		int x_h = X_o[0][x - 1];
+		int x_v = ROUND(0.5*(X_e[0][x] + X_e[1][x]));
+		if (Dir[y][x - 1]) {
+			Dir[y][x] = dir(x_o, T, x_v, x_h);
+			// TODO : Encode Dir[y][x]
+			if (Dir[y][x])
+				pred = x_h;
+			else
+				pred = x_v;
+		}
+		else {
+			pred = x_v;
+			Dir[y][x] = dir(x_o, T, x_v, x_h);
+		}
+
+		//////// TODO : wrapping
+		int res = x_o - pred;
+		int sym = res >= 0 ? 2 * res : -2 * res - 1;
+		int ctx = context(x, y);
+
+		Dir_counter[Dir[y][x]]++;
+		sym_counter[sym]++;
+		context_counter[ctx]++;
+
+		// TODO : Arithmetic coding for sym
+
+		numPix++;
+
+	}
+
+	// middle rows
+	for (y = 1; y < height; y++) {
+		for (x = 0; x < width; x++) {
 			int x_o = X_o[y][x];
-			int x_h = X_o[y][x - 1];
-			int x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+			int x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
+			int x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 			if (Dir[y-1][x] || Dir[y][x-1]) {
 				Dir[y][x] = dir(x_o, T, x_v, x_h);
-				//Encode Dir[y][x]
+				// TODO : Encode Dir[y][x]
 				if (Dir[y][x])
 					pred = x_h;
 				else
@@ -142,7 +190,7 @@ int Encoder::run() {
 			sym_counter[sym]++;
 			context_counter[ctx]++;
 
-			//Arithmetic coding for sym
+			// TODO : Arithmetic coding for sym
 
 			numPix++;
 		}
