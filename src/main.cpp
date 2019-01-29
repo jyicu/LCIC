@@ -6,6 +6,7 @@
 
 #include "acfile\arithmetic_codec.h"
 #include "BMP.h"
+#include "preprocess.h"
 
 #pragma warning(disable: 4996)
 
@@ -37,7 +38,7 @@ void encodeMag(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
 	}
 }
 
-int encode_odd(FILE *fp, UINT8 **R, UINT8 **G, UINT8 **B, int height, int width) {
+int encode_odd(FILE *fp, int **R, int **G, int **B, int height, int width) {
 	Arithmetic_Codec coder;
 	Adaptive_Data_Model dm[NUM_CTX];
 	int ctxCnt[NUM_CTX];
@@ -87,6 +88,7 @@ int encode_odd(FILE *fp, UINT8 **R, UINT8 **G, UINT8 **B, int height, int width)
 
 			//int ctx = CLIP(10 * (ABS(CC) - 0.4), 0, NUM_CTX - 1);
 			int ctx = CLIP(ABS(R[y][x-1]-R[y][x+1])/4, 0, NUM_CTX - 1);
+			
 			encodeMag(sym, &coder, &dm[ctx]);
 
 			numPix++;
@@ -104,15 +106,16 @@ int encode_odd(FILE *fp, UINT8 **R, UINT8 **G, UINT8 **B, int height, int width)
 }
 
 void main(int argc, char *argv[]) {
-	//char infile[] = "lena.bmp";
-	char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
+	
+	//char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
+	char infile[] = "suzy.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
+	char codefile_out[] = "code_out.bin";
 	FILE *fp;
 
-	unsigned char **R;
-	unsigned char **G;
-	unsigned char **B;
+	int **R, **G, **B;
+
 	int height, width;
 
 	bmpRead(infile, &R, &G, &B, &height, &width);
@@ -120,18 +123,20 @@ void main(int argc, char *argv[]) {
 	assert(height% 2 == 0);
 	assert(width % 2 == 0);
 
-	unsigned char **R2 = alloc2D(height, width/2);
-	unsigned char **G2 = alloc2D(height, width/2);
-	unsigned char **B2 = alloc2D(height, width/2);
+	check_result();
+
+	int **R2 = alloc2D(height/2, width);
+	int **G2 = alloc2D(height/2, width);
+	int **B2 = alloc2D(height/2, width);
 
 	for (int y = 0; y < height; y++) {
 		for (int x =0; x < width ; x+=1) {
-			R2[y][x / 2] = R[y][x];
-			G2[y][x / 2] = G[y][x];
-			B2[y][x / 2] = B[y][x];
+			R2[y/2][x] = R[y][x];
+			G2[y/2][x] = G[y][x];
+			B2[y/2][x] = B[y][x];
 		}
 	}
-	bmpWrite(outfile, R2, G2, B2, height/2, width/1);
+	bmpWrite(outfile, R2, G2, B2, height/2, width);
 
 	if (!(fp = fopen(codefile, "wb"))) {
 		fprintf(stderr, "Code file open error.\n");
@@ -139,6 +144,7 @@ void main(int argc, char *argv[]) {
 	}
 
 	int bytes = encode_odd(fp, R, G, B, height, width);
+
 //	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / (height - 2) / (width / 2-1));
 
 	fclose(fp);
