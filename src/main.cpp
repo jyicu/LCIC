@@ -7,6 +7,7 @@
 #include "acfile\arithmetic_codec.h"
 #include "BMP.h"
 #include "preprocess.h"
+#include "encoder.h"
 
 #pragma warning(disable: 4996)
 
@@ -105,10 +106,10 @@ int encode_odd(FILE *fp, int **R, int **G, int **B, int height, int width) {
 	return bytes;
 }
 
-void main(int argc, char *argv[]) {
-	
-	//char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "suzy.bmp";
+
+void main_(int argc, char *argv[]) {
+	//char infile[] = "lena.bmp";
+	char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	char codefile_out[] = "code_out.bin";
@@ -171,3 +172,27 @@ medical image는 흑백적 위주 -> 이걸 context로?
 
 큰 파일 처리
 */
+
+int main() {
+	printf("Test");
+
+	char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
+	char outfile[] = "lev2.bmp";
+	char codefile[] = "code.bin";
+	FILE *fp;
+
+	unsigned char **R;
+	unsigned char **G;
+	unsigned char **B;
+	int height, width;
+
+	bmpRead(infile, &R, &G, &B, &height, &width);
+
+	Encoder enc(R,3,6,height,width);
+	enc.run();
+
+
+	free2D(R);
+	free2D(G);
+	free2D(B);
+}
