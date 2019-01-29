@@ -12,10 +12,30 @@
 #define UINT8(x)	CLIP255(ROUND(x))
 
 
+template <typename T>
+T **alloc2D(int height, int width);
+template <typename T>
+void free2D(T **p);
+
+class Hierarchical_coder {
+public:
+	Hierarchical_coder(char filename[]);
+	~Hierarchical_coder();
+
+	int run();
+
+private:
+	int height, width;
+
+	int ** Y;
+	int ** U_o1, ** U_o2, ** U_e1, ** U_e2;
+	int ** V_o1, ** V_o2, ** V_e1, ** V_e2;
+};
+
 
 class Encoder {
 public:
-	Encoder(unsigned char ** I, int T, int K, int height, int width);
+	Encoder(int ** I, int T, int K, int height, int width);
 	~Encoder();
 	
 	int run();

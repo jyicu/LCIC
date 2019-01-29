@@ -22,7 +22,7 @@
     <ProjectGuid>{BD1532BA-0D5B-45AE-BA02-E4908B8C6698}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>WSI_Compress</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -150,6 +150,7 @@
     <ClCompile Include="src\BMP.cpp" />
     <ClCompile Include="src\cabac.cpp" />
     <ClCompile Include="src\dct.cpp" />
+    <ClCompile Include="src\encoder.cpp" />
     <ClCompile Include="src\lifting.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\pgm_io.cpp" />
@@ -158,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="src\acfile\arithmetic_codec.h" />
     <ClInclude Include="src\BMP.h" />
+    <ClInclude Include="src\encoder.h" />
     <ClInclude Include="src\global.h" />
     <ClInclude Include="src\lifting.h" />
     <ClInclude Include="src\pgm_io.h" />

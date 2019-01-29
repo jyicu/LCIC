@@ -174,25 +174,32 @@ medical image는 흑백적 위주 -> 이걸 context로?
 */
 
 int main() {
-	printf("Test");
-
-	char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
+	
+	char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
 
-	unsigned char **R;
-	unsigned char **G;
-	unsigned char **B;
+	int **R;
+	int **G;
+	int **B;
+	int **Y;
+	int **U;
+	int **V;
 	int height, width;
 
 	bmpRead(infile, &R, &G, &B, &height, &width);
 
-	Encoder enc(R,3,6,height,width);
+	RGB2YUV(&R, &G, &B, &Y, &U, &V, &height, &width);
+	Encoder enc(U,3,6,height,width);
 	enc.run();
 
 
 	free2D(R);
 	free2D(G);
 	free2D(B);
+	free2D(Y);
+	free2D(U);
+	free2D(V);
+	return 0;
 }
