@@ -5,6 +5,9 @@
 #include "encoder.h"
 #include "preprocess.h"
 #include "BMP.h"
+#include "acfile/arithmetic_codec.h"
+
+#define NUM_CTX 6
 
 template <typename T>
 T **alloc2D(int height, int width) {
@@ -30,6 +33,8 @@ inline bool dir(int x_o, int T, int x_v, int x_h) {
 }
 
 Hierarchical_coder::Hierarchical_coder(char filename[]) {
+
+
 	// Read in image file to RGB channels
 	int **R, **G, **B;
 
@@ -68,6 +73,9 @@ Hierarchical_coder::~Hierarchical_coder() {
 }
 
 int Hierarchical_coder::run() {
+	// Encode Y,U_e2, V_e2
+	Encoder U1();
+
 	return 0;
 }
 
@@ -135,11 +143,36 @@ int Encoder::context(int x, int y) {
 	return K - 1;
 }
 
+void Encoder::encodeMag(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
+	int symMax = 20;
+
+	if (mag >= symMax) {
+		pCoder->encode(symMax, *pDm);
+		mag -= symMax;
+		pCoder->put_bit(mag & 1);
+		encodeMag(mag >> 1, pCoder, pDm);
+	}
+	else {
+		pCoder->encode(mag, *pDm);
+	}
+}
 
 int Encoder::run() {
 	int y, x;
 	int numPix = 0;
 	int pred;
+
+	Arithmetic_Codec coder;
+	Adaptive_Data_Model dm[NUM_CTX];
+
+	for (int i = 0; i < NUM_CTX; i++) {
+		dm[i].set_alphabet(21);
+		dm[i].set_distribution(0.7);
+	}
+
+	int size = width * height;
+	coder.set_buffer(size);
+	coder.start_encoder();
 
 	int Dir_counter[2] = { 0 };
 	int sym_counter[512] = { 0 };
@@ -223,6 +256,8 @@ int Encoder::run() {
 			int sym = res >= 0 ? 2 * res : -2 * res - 1;
 			int ctx = context(x, y);
 
+			encodeMag(sym, &coder, &dm[ctx]);
+
 			Dir_counter[Dir[y][x]]++;
 			sym_counter[sym]++;
 			context_counter[ctx]++;
@@ -236,7 +271,15 @@ int Encoder::run() {
 	//coder
 	float proportion = float(x_h_counter) / numPix;
 	printf("freq of selecting H prediction : %f\n", proportion);
-	int bytes = 0;
+	FILE *fp;
+	char codefile[] = "code.bin";
+
+	if (!(fp = fopen(codefile, "wb"))) {
+		fprintf(stderr, "Code file open error.\n");
+		exit(-1);
+	}
+	int bytes = coder.write_to_file(fp);
+	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / numPix);
 
 	return bytes;
 }

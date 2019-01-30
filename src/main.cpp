@@ -25,14 +25,14 @@ typedef unsigned char UINT8;
 #define ROUND(x)	((int)((x)+0.5))
 #define UINT8(x)	CLIP255(ROUND(x))
 
-void encodeMag(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
+void encodeMag0(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
 	int symMax = 10;
 
 	if (mag >= symMax) {
 		pCoder->encode(symMax, *pDm);
 		mag -= symMax;
 		pCoder->put_bit(mag & 1);
-		encodeMag(mag >> 1, pCoder, pDm);
+		encodeMag0(mag >> 1, pCoder, pDm);
 	}
 	else {
 		pCoder->encode(mag, *pDm);
@@ -90,7 +90,7 @@ int encode_odd(FILE *fp, int **R, int **G, int **B, int height, int width) {
 			//int ctx = CLIP(10 * (ABS(CC) - 0.4), 0, NUM_CTX - 1);
 			int ctx = CLIP(ABS(R[y][x-1]-R[y][x+1])/4, 0, NUM_CTX - 1);
 			
-			encodeMag(sym, &coder, &dm[ctx]);
+			encodeMag0(sym, &coder, &dm[ctx]);
 
 			numPix++;
 		}
@@ -172,6 +172,23 @@ medical image는 흑백적 위주 -> 이걸 context로?
 
 큰 파일 처리
 */
+
+int test_Kodak() {
+	int num_files = 24;
+	int bytes = 0;
+	int num_pix = 0;
+	for (int i = 0; i < num_files; i++) {
+		char filename[20];
+		sprintf(filename, "./Kodak/kodim%d.bmp",i+1);
+		Hierarchical_coder coder(filename);
+		bytes += coder.run();
+		num_pix;
+	}
+	float avg_bpp = float(bytes) / num_pix;
+	return 0;
+}
+
+
 
 int main() {
 	

@@ -1,6 +1,8 @@
 #pragma once
 #pragma warning(disable: 4996)
 
+#include "acfile/arithmetic_codec.h"
+
 #define MAX(x,y)	((x)>(y) ? (x) : (y))
 #define MIN(x,y)	((x)<(y) ? (x) : (y))
 #define MAX4(X)		MAX(MAX((X)[0],(X)[1]),MAX((X)[2],(X)[3]))
@@ -30,6 +32,7 @@ private:
 	int ** Y;
 	int ** U_o1, ** U_o2, ** U_e1, ** U_e2;
 	int ** V_o1, ** V_o2, ** V_e1, ** V_e2;
+	FILE fp;
 };
 
 
@@ -53,6 +56,7 @@ private:
 	void set_local_activity();
 	void context_modeling();
 	int context(int x, int y);
+	void encodeMag(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
 };
 
 
