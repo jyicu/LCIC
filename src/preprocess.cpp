@@ -190,25 +190,24 @@ void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN1, int *
 		***U_EVEN1, V_EVEN1 : Decomposed U,V Even2 (h/2, w)
 		***U_EVEN2, V_EVEN2 : Decomposed U,V Even2 (w/2, h/2)
 */
-void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***U_EVEN1, int***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN1, int ***V_EVEN2)
+void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***U_EVEN1, int***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN1, int ***V_EVEN2, int *height, int *width)
 {
 	// Read in image file to RGB channels
 	int **R, **G, **B;
-	int height, width;
 
-	bmpRead(filename, &R, &G, &B, &height, &width);
+	bmpRead(filename, &R, &G, &B, height, width);
 
-	assert(height % 2 == 0);
-	assert(width % 2 == 0);
+	assert(*height % 2 == 0);
+	assert(*width % 2 == 0);
 
 	// Color transform RGB into YUV image
 	int **U, **V;
 
-	RGB2YUV(&R, &G, &B, Y, &U, &V, &height, &width);
+	RGB2YUV(&R, &G, &B, Y, &U, &V, height, width);
 
 	// Decompose U,V channels into odd1, odd2, even2 images
-	image_decomposition(&U, U_ODD1, U_ODD2, U_EVEN1, U_EVEN2, &height, &width);
-	image_decomposition(&V, V_ODD1, V_ODD2, V_EVEN1, V_EVEN2, &height, &width);
+	image_decomposition(&U, U_ODD1, U_ODD2, U_EVEN1, U_EVEN2, height, width);
+	image_decomposition(&V, V_ODD1, V_ODD2, V_EVEN1, V_EVEN2, height, width);
 
 	// free memory
 	free(R);
@@ -363,7 +362,7 @@ void check_result() {
 
 	char preprocess_file[] = "result/Preprocess.bmp";
 
-	preprocess(infile, &Y_, &U_ODD1_, &U_ODD2_, &U_EVEN1_, &U_EVEN2_, &V_ODD1_, &V_ODD2_, &V_EVEN1_, &V_EVEN2_);
+	preprocess(infile, &Y_, &U_ODD1_, &U_ODD2_, &U_EVEN1_, &U_EVEN2_, &V_ODD1_, &V_ODD2_, &V_EVEN1_, &V_EVEN2_, &height, &width);
 	postprocess(preprocess_file, &Y_, &U_ODD1_, &U_ODD2_, &U_EVEN2_, &V_ODD1_, &V_ODD2_, &V_EVEN2_, &height, &width);
 
 	// Free
