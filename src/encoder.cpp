@@ -128,7 +128,7 @@ unsigned char* Hierarchical_decoder::readBinFile(char filename[]) {
 		exit(1);
 	}
 
-	while ((ch = fgetc(fp) != EOF)) {
+	while ((ch = fgetc(fp)) != EOF) {
 		data_vec.push_back(ch);
 	}
 
@@ -547,6 +547,8 @@ int Encoder::run_test() {
 	int bytes = coder.write_to_file(fp);
 	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / numPix);
 
+	fclose(fp);
+
 	return bytes;
 }
 
@@ -765,7 +767,7 @@ int ** Decoder::run_test() {
 		exit(1);
 	}
 
-	while ((ch = fgetc(fp) != EOF)) {
+	while ((ch = fgetc(fp)) != EOF) {
 		data_vec.push_back(ch);
 	}
 

@@ -9,40 +9,40 @@
 
 
 /*
-	@abstract : Split image into (1.Odd line image / 2. Even line image)
-	@input
-		***C    : channel of image
-		*height : height of image
-		*width  : width of image
-	@output
-		***ODD  : Odd line image  (Size : height/2, width)
-		***EVEN : Even line image (Size : height/2, width)
+@abstract : Split image into (1.Odd line image / 2. Even line image)
+@input
+***C    : channel of image
+*height : height of image
+*width  : width of image
+@output
+***ODD  : Odd line image  (Size : height/2, width)
+***EVEN : Even line image (Size : height/2, width)
 */
 void split_image(int ***C, int ***ODD, int ***EVEN, int *height, int *width)
 {
-	*ODD  = alloc2D(*height / 2, *width);
+	*ODD = alloc2D(*height / 2, *width);
 	*EVEN = alloc2D(*height / 2, *width);
 
 	for (int y = 0; y < *height; y++) {
 		for (int x = 0; x < *width; x++) {
 			if (y % 2 == 0)
-				(*EVEN)[y / 2][x] = (*C)[y][x];
+				(*ODD)[y / 2][x] = (*C)[y][x];
 			else
-				(*ODD)[(y - 1) / 2][x] = (*C)[y][x];
+				(*EVEN)[(y - 1) / 2][x] = (*C)[y][x];
 		}
 	}
 }
 
 
 /*
-	@abstract : Concat (1.Odd line image / 2.Even line image) into CONCAT image
-	@input
-		***ODD  : Odd line image  (Size : height/2, width)
-		***EVEN : Even line image (Size : height/2, width)
-		*height : height of CONCAT image
-		*width  : width of CONCAT image
-	@output
-		***CONCAT : CONCAT image of ODD/EVEN image
+@abstract : Concat (1.Odd line image / 2.Even line image) into CONCAT image
+@input
+***ODD  : Odd line image  (Size : height/2, width)
+***EVEN : Even line image (Size : height/2, width)
+*height : height of CONCAT image
+*width  : width of CONCAT image
+@output
+***CONCAT : CONCAT image of ODD/EVEN image
 */
 void concat_image(int ***ODD, int ***EVEN, int ***CONCAT, int *height, int *width)
 {
@@ -51,23 +51,23 @@ void concat_image(int ***ODD, int ***EVEN, int ***CONCAT, int *height, int *widt
 	for (int y = 0; y < *height; y++) {
 		for (int x = 0; x < *width; x++) {
 			if (y % 2 == 0)
-				(*CONCAT)[y][x] = (*EVEN)[y / 2][x];
+				(*CONCAT)[y][x] = (*ODD)[y / 2][x];
 			else
-				(*CONCAT)[y][x] = (*ODD)[(y - 1) / 2][x];
+				(*CONCAT)[y][x] = (*EVEN)[(y - 1) / 2][x];
 		}
 	}
 }
 
 
 /*
-	@abstract : Rotate image 90 degrees (Clockwise / Counter clockwise)
-	@input
-		***C      : channel of image
-		direction : direction of rotation (0 : Clockwise, 1 : Counter clockwise)
-		*height   : height of channel of image
-		*width    : width of channel of image
-	@output
-		***R : Rotated image
+@abstract : Rotate image 90 degrees (Clockwise / Counter clockwise)
+@input
+***C      : channel of image
+direction : direction of rotation (0 : Clockwise, 1 : Counter clockwise)
+*height   : height of channel of image
+*width    : width of channel of image
+@output
+***R : Rotated image
 */
 void rotate_image(int ***C, int ***R, int direction, int *height, int *width)
 {
@@ -76,7 +76,7 @@ void rotate_image(int ***C, int ***R, int direction, int *height, int *width)
 	if (direction == CLOCKWISE) {
 		for (int y = 0; y < *height; y++) {
 			for (int x = 0; x < *width; x++) {
-				(*R)[x][y] = (*C)[y][x];
+				(*R)[*width - x - 1][y] = (*C)[y][x];
 			}
 		}
 	}
@@ -91,13 +91,13 @@ void rotate_image(int ***C, int ***R, int direction, int *height, int *width)
 
 
 /*
-	@abstract : Apply RGB to YUV color transform
-	@input
-		***R,G,B : R,G,B channels of image	
-		*height  : height of image
-		*width   : width of image
-	@output
-		***Y,U,V : Y,U,V channels of image
+@abstract : Apply RGB to YUV color transform
+@input
+***R,G,B : R,G,B channels of image
+*height  : height of image
+*width   : width of image
+@output
+***Y,U,V : Y,U,V channels of image
 */
 void RGB2YUV(int ***R, int ***G, int ***B, int ***Y, int ***U, int ***V, int *height, int* width)
 {
@@ -124,13 +124,13 @@ void RGB2YUV(int ***R, int ***G, int ***B, int ***Y, int ***U, int ***V, int *he
 
 
 /*
-	@abstract : Apply YUV to RGB color transform
-	@input
-		***Y,U,V : Y,U,V channels of image
-		*height  : height of image
-		*width   : width of image
-	@output
-		***R,G,B : R,G,B channels of image
+@abstract : Apply YUV to RGB color transform
+@input
+***Y,U,V : Y,U,V channels of image
+*height  : height of image
+*width   : width of image
+@output
+***R,G,B : R,G,B channels of image
 */
 void YUV2RGB(int ***Y, int ***U, int ***V, int ***R, int ***G, int ***B, int *height, int* width)
 {
@@ -156,13 +156,13 @@ void YUV2RGB(int ***Y, int ***U, int ***V, int ***R, int ***G, int ***B, int *he
 
 
 /*
-	@abstract : Decompose image into ODD1, ODD2, EVEN2
-	@input
-		***C    : channel of image
-		*height : height of image
-		*width  : width of image
-	@output
-		***ODD1, ODD2, EVEN1, EVEN2  : Decomposed ODD1, ODD2, EVEN1, EVEN2
+@abstract : Decompose image into ODD1, ODD2, EVEN2
+@input
+***C    : channel of image
+*height : height of image
+*width  : width of image
+@output
+***ODD1, ODD2, EVEN1, EVEN2  : Decomposed ODD1, ODD2, EVEN1, EVEN2
 */
 void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN1, int ***EVEN2, int *height, int *width)
 {
@@ -180,15 +180,15 @@ void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN1, int *
 
 
 /*
-	@abstract : Decompose RGB image into YUV image (ODD/EVEN line images)
-	@input
-		filename : image filename
-	@output
-		***Y                : Decomposed Y (h, w)
-		***U_ODD1, V_ODD1   : Decomposed U,V Odd1 (h/2, w)
-		***U_ODD2, V_ODD2   : Decomposed U,V Odd2 (w/2, h/2)
-		***U_EVEN1, V_EVEN1 : Decomposed U,V Even2 (h/2, w)
-		***U_EVEN2, V_EVEN2 : Decomposed U,V Even2 (w/2, h/2)
+@abstract : Decompose RGB image into YUV image (ODD/EVEN line images)
+@input
+filename : image filename
+@output
+***Y                : Decomposed Y (h, w)
+***U_ODD1, V_ODD1   : Decomposed U,V Odd1 (h/2, w)
+***U_ODD2, V_ODD2   : Decomposed U,V Odd2 (w/2, h/2)
+***U_EVEN1, V_EVEN1 : Decomposed U,V Even2 (h/2, w)
+***U_EVEN2, V_EVEN2 : Decomposed U,V Even2 (w/2, h/2)
 */
 void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***U_EVEN1, int***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN1, int ***V_EVEN2, int *height, int *width)
 {
@@ -218,17 +218,17 @@ void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***
 }
 
 /*
-	@abstract : Compose complete RGB Image(h,w) from decomposed YUVs
-	@input
-		filename : output image filename
-		***Y                : Decomposed Y (h, w)
-		***U_ODD1, V_ODD1   : Decomposed U,V Odd1 (h/2, w)
-		***U_ODD2, V_ODD2   : Decomposed U,V Odd2 (w/2, h/2)
-		***U_EVEN2, V_EVEN2 : Decomposed U,V Even2 (w/2, h/2)
-		*height             : height of final image
-		*width              : width of final image
-	@output
-		None
+@abstract : Compose complete RGB Image(h,w) from decomposed YUVs
+@input
+filename : output image filename
+***Y                : Decomposed Y (h, w)
+***U_ODD1, V_ODD1   : Decomposed U,V Odd1 (h/2, w)
+***U_ODD2, V_ODD2   : Decomposed U,V Odd2 (w/2, h/2)
+***U_EVEN2, V_EVEN2 : Decomposed U,V Even2 (w/2, h/2)
+*height             : height of final image
+*width              : width of final image
+@output
+None
 */
 void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN2, int *height, int *width)
 {
@@ -240,8 +240,8 @@ void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int **
 
 	int **U_EVEN1, **V_EVEN1;
 
-	rotate_image(&U_EVEN1_R, &U_EVEN1, CLOCKWISE, width, &half_height);
-	rotate_image(&V_EVEN1_R, &V_EVEN1, CLOCKWISE, width, &half_height);
+	rotate_image(&U_EVEN1_R, &U_EVEN1, COUNTER_CLOCKWISE, width, &half_height);
+	rotate_image(&V_EVEN1_R, &V_EVEN1, COUNTER_CLOCKWISE, width, &half_height);
 
 	int **U, **V;
 
@@ -267,10 +267,10 @@ void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int **
 
 
 /*
-	@abstract : Check if split/concat/rotate/RCT functions work well
+@abstract : Check if split/concat/rotate/RCT functions work well
 */
 void check_result() {
-	char infile[] = "suzy.bmp";
+	char infile[] = "test_image.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 
@@ -352,10 +352,10 @@ void check_result() {
 	char even1_file[] = "result/Even1.bmp";
 	char even2_file[] = "result/Even2.bmp";
 
-	bmpWrite(odd1_file, ODD1_R, ODD1_G, ODD1_B, height/2, width);
-	bmpWrite(odd2_file, ODD2_R, ODD2_G, ODD2_B, width/2, height/2);
-	bmpWrite(even1_file, EVEN1_R, EVEN1_G, EVEN1_B, height/2, width);
-	bmpWrite(even2_file, EVEN2_R, EVEN2_G, EVEN2_B, width/2, height/2);
+	bmpWrite(odd1_file, ODD1_R, ODD1_G, ODD1_B, height / 2, width);
+	bmpWrite(odd2_file, ODD2_R, ODD2_G, ODD2_B, width / 2, height / 2);
+	bmpWrite(even1_file, EVEN1_R, EVEN1_G, EVEN1_B, height / 2, width);
+	bmpWrite(even2_file, EVEN2_R, EVEN2_G, EVEN2_B, width / 2, height / 2);
 
 	// Preprocess Check
 	int **Y_, **U_ODD1_, **U_ODD2_, **U_EVEN1_, **U_EVEN2_, **V_ODD1_, **V_ODD2_, **V_EVEN1_, **V_EVEN2_;

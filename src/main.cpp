@@ -46,6 +46,7 @@ int test_Kodak() {
 
 void main(int argc, char *argv[]) {
 	
+	check_result();
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
 	char infile[] = "./Kodak/test.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
