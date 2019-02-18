@@ -15,6 +15,7 @@
 #define HOR 1
 #define VER 0
 #define FIXED_BITS 10
+#define ARRAY_MAX 500000
 
 template <typename T>
 T **alloc2D(int height, int width) {
@@ -114,8 +115,26 @@ Hierarchical_decoder::~Hierarchical_decoder() {
 
 unsigned char* Hierarchical_decoder::readBinFile(char filename[]) {
 
-	//**TO DO**//
-	unsigned char compressed_data[5000] = { 0 };
+	if (!(fp = fopen(filename, "rb"))) {
+		fprintf(stderr, "Code file open error.\n");
+		exit(-1);
+	}
+
+	std::vector<unsigned char> data_vec;
+	int ch;
+
+	if ((fp = fopen(filename, "rb")) == NULL) {
+		fputs("error", stderr);
+		exit(1);
+	}
+
+	while ((ch = fgetc(fp) != EOF)) {
+		data_vec.push_back(ch);
+	}
+
+	unsigned char compressed_data[ARRAY_MAX];
+
+	std::copy(data_vec.begin(), data_vec.end(), compressed_data);
 
 	return compressed_data;
 }
@@ -130,12 +149,6 @@ int** Hierarchical_decoder::decode_jpeg2000(unsigned char* compressed_data) {
 }
 
 int Hierarchical_decoder::run(char filename[]) {
-
-
-	if (!(fp = fopen(filename, "rb"))) {
-		fprintf(stderr, "Code file open error.\n");
-		exit(-1);
-	}
 
 	Arithmetic_Codec coder;
 
@@ -417,6 +430,126 @@ int Encoder::run(FILE *fp) {
 	return bytes;
 }
 
+int Encoder::run_test() {
+
+	Arithmetic_Codec coder;
+	Adaptive_Data_Model dm[NUM_CTX];
+
+	initCoder(&coder, dm);
+
+	// Counter Initialize
+	int Dir_counter[2] = { 0 };
+	int sym_counter[512] = { 0 };
+	int context_counter[NUM_CTX] = { 0 };
+	int x_h_counter = 0;
+	int numPix = 0;
+
+	// Encoding variables
+	int y, x;
+	int x_o, x_h, x_v;
+	int pred, res, ctx;
+	unsigned int sym;
+
+
+	// First Pixel
+	{
+		y = 0;
+		x = 0;
+
+		x_o = X_o[y][x];
+		x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+
+		// Set First pixel direction as vertical
+		Dir[y][x] = VER;
+		pred = x_v;
+
+		// Encode
+		res = x_o - pred;
+		sym = MAP(res);
+		ctx = context(x, y);
+
+		encodeMag(sym, &coder, &dm[ctx]);
+
+		// Counter
+		Dir_counter[Dir[y][x]]++;
+		sym_counter[sym]++;
+		context_counter[ctx]++;
+
+		numPix++;
+
+		std::cout << x_o << std::ends;
+	}
+
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+
+			if (x == 0 && y == 0)
+				continue;
+
+			x_o = X_o[y][x];
+
+			//===========================//
+			//  HOR/VER pixel prediction //
+			//===========================//
+			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
+			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+
+			//===========================//
+			//     Encode Direction      //
+			//===========================//
+			Dir[y][x] = dir(x_o, T, x_v, x_h);
+
+			if (eitherHOR(x, y)) {
+				encodeDir(Dir[y][x], &coder);
+				pred = (Dir[y][x] == HOR) ? x_h : x_v;
+				if (Dir[y][x] == HOR)
+					x_h_counter++;
+			}
+			else
+				pred = x_v;
+
+			//===========================//
+			//      Encode Symbol        //
+			//===========================//
+			res = x_o - pred;
+			sym = MAP(res);
+			ctx = context(x, y);
+
+			//std::cout << "(y,x,sym) : " << y << ", " << x << ", " << sym << std::endl;
+
+			encodeMag(sym, &coder, &dm[ctx]);
+
+			Dir_counter[Dir[y][x]]++;
+			sym_counter[sym]++;
+			context_counter[ctx]++;
+
+			numPix++;
+
+			std::cout << x_o << std::ends;
+		}
+	}
+
+	std::cout << std::endl;
+
+	//coder
+	float proportion = float(x_h_counter) / numPix;
+	printf("freq of selecting H prediction : %f\n", proportion);
+
+	// open output file
+	FILE *fp;
+	char codefile[] = "code_test.bin";
+
+	if (!(fp = fopen(codefile, "wb"))) {
+		fprintf(stderr, "Code file open error.\n");
+		exit(-1);
+	}
+
+	int bytes = coder.write_to_file(fp);
+	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / numPix);
+
+	return bytes;
+}
+
 Decoder::Decoder(int **X_e_, int T_, int K_, int symmax_, int height_, int width_) {
 
 	X_e = X_e_;
@@ -613,6 +746,100 @@ int ** Decoder::run(unsigned char* compressed_data) {
 	// Cut compressed data
 	unsigned int code_bytes = coder.get_code_bytes();
 	compressed_data = compressed_data + code_bytes;
+
+	return X_o;
+}
+
+int ** Decoder::run_test() {
+
+	Arithmetic_Codec coder;
+	Adaptive_Data_Model dm[NUM_CTX];
+
+	FILE *fp;
+
+	std::vector<unsigned char> data_vec;
+	int ch;
+
+	if ((fp = fopen("code_test.bin", "rb")) == NULL) {
+		fputs("error", stderr);
+		exit(1);
+	}
+
+	while ((ch = fgetc(fp) != EOF)) {
+		data_vec.push_back(ch);
+	}
+
+	unsigned char compressed_data[ARRAY_MAX];
+
+	std::copy(data_vec.begin(), data_vec.end(), compressed_data);
+
+	initCoder(&coder, dm, compressed_data);
+
+	// Encoding variables
+	int y, x;
+	int x_o, x_h, x_v;
+	int pred, res, ctx;
+	unsigned int sym;
+	int dir;
+
+	// First Pixel
+	{
+		y = 0;
+		x = 0;
+
+		ctx = context(x, y);
+
+		sym = decodemag(&coder, &dm[ctx]);
+
+		res = UNMAP(sym);
+
+		Dir[y][x] = VER;
+
+		x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+
+		pred = x_v;
+
+		x_o = res + pred;
+
+		X_o[y][x] = x_o;
+
+		std::cout << x_o << std::ends;
+	}
+
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+
+			if (x == 0 && y == 0)
+				continue;
+
+			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
+			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+
+			ctx = context(x, y);
+
+			sym = decodemag(&coder, &dm[ctx]);
+
+			res = UNMAP(sym);
+
+			if (eitherHOR(x, y)) {
+				dir = coder.get_bit();
+				pred = (dir == HOR) ? x_h : x_v;
+				Dir[y][x] = dir;
+			}
+			else {
+				pred = x_v;
+				Dir[y][x] = VER;
+			}
+
+			x_o = res + pred;
+
+			X_o[y][x] = x_o;
+
+			std::cout << x_o << std::ends;
+		}
+	}
+
+	std::cout << std::endl;
 
 	return X_o;
 }

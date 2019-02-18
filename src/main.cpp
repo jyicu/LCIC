@@ -2,7 +2,9 @@
 #include "stdlib.h"
 #include "math.h"
 #include "assert.h"
+#include <vector>
 #include <windows.h>
+#include <iostream>
 
 #include "acfile\arithmetic_codec.h"
 #include "BMP.h"
@@ -45,7 +47,8 @@ int test_Kodak() {
 void main(int argc, char *argv[]) {
 	
 
-	char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
+	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
+	char infile[] = "./Kodak/test.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
@@ -58,32 +61,46 @@ void main(int argc, char *argv[]) {
 	int **V;
 	int height, width;
 
+	int **U_o1, **U_o2, **U_e1, **U_e2, **V_o1, **V_o2, **V_e1, **V_e2;
+
 	int T = 3;
 	int K = 6;
 	int symmax = 40;
 
-	Hierarchical_coder hc(infile, T, K, symmax);
-	hc.run();
+	preprocess(infile, &Y, &U_o1, &U_o2, &U_e1, &U_e2, &V_o1, &V_o2, &V_e1, &V_e2, &height, &width);
 
-	bmpRead(infile, &R, &G, &B, &height, &width);
+	Encoder encoder_test(U_o1, U_e1, T, K, symmax, height/2, width);
+	encoder_test.run_test();
 
-	RGB2YUV(&R, &G, &B, &Y, &U, &V, &height, &width);
-	//Encoder enc(U, T, K, symmax, height, width);
-	//enc.run();
+	int **U_o1_decoded;
 
-	int **X_o, **X_e;
+	Decoder decoder_test(U_e1, T, K, symmax, height/2, width);
+	U_o1_decoded = decoder_test.run_test();
 
-	split_image(&U, &X_o, &X_e, &height, &width);
+	postprocess("Decoded_result.bmp", &Y, &U_o1_decoded, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
 
-	Hierarchical_decoder hd(T, K, symmax, height, width);
-	hd.run("code.bin");
+	//Hierarchical_coder hc(infile, T, K, symmax);
+	//hc.run();
 
-	free2D(R);
-	free2D(G);
-	free2D(B);
-	free2D(Y);
-	free2D(U);
-	free2D(V);
+	//bmpRead(infile, &R, &G, &B, &height, &width);
+
+	//RGB2YUV(&R, &G, &B, &Y, &U, &V, &height, &width);
+	////Encoder enc(U, T, K, symmax, height, width);
+	////enc.run();
+
+	//int **X_o, **X_e;
+
+	//split_image(&U, &X_o, &X_e, &height, &width);
+
+	//Hierarchical_decoder hd(T, K, symmax, height, width);
+	//hd.run("code.bin");
+
+	//free2D(R);
+	//free2D(G);
+	//free2D(B);
+	//free2D(Y);
+	//free2D(U);
+	//free2D(V);
 	return;
 }
 

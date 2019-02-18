@@ -67,6 +67,7 @@ public:
 	~Encoder();
 
 	int run(FILE *fp);
+	int run_test();
 
 private:
 	int height, width;
@@ -95,6 +96,7 @@ public:
 	~Decoder();
 
 	int** run(unsigned char* compressed_data);
+	int** run_test();
 
 private:
 	int height, width;
@@ -114,6 +116,3 @@ private:
 	unsigned int decodemag(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
 	bool eitherHOR(int x, int y);
 };
-
-
-
