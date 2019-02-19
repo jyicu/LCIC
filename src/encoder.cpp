@@ -527,6 +527,7 @@ int Encoder::run_test() {
 
 			std::cout << x_o << std::ends;
 		}
+		std::cout << std::endl;
 	}
 
 	std::cout << std::endl;
@@ -623,7 +624,7 @@ int Decoder::context(int x, int y) {
 
 }
 
-void Decoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, unsigned char *compressed_data) {
+void Decoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, FILE *fp) {
 
 	for (int i = 0; i < K; i++) {
 		pDm[i].set_alphabet(symMax + 1);
@@ -631,8 +632,8 @@ void Decoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, unsi
 	}
 
 	int size = width * height;
-	pCoder->set_buffer(size, compressed_data);
-	pCoder->start_decoder();
+	pCoder->set_buffer(size);
+	pCoder->read_from_file(fp);
 
 }
 
@@ -682,7 +683,7 @@ int ** Decoder::run(unsigned char* compressed_data) {
 	Arithmetic_Codec coder;
 	Adaptive_Data_Model dm[NUM_CTX];
 
-	initCoder(&coder, dm, compressed_data);
+	initCoder(&coder, dm, NULL);
 
 	// Encoding variables
 	int y, x;
@@ -759,30 +760,19 @@ int ** Decoder::run_test() {
 
 	FILE *fp;
 
-	std::vector<unsigned char> data_vec;
-	int ch;
-
 	if ((fp = fopen("code_test.bin", "rb")) == NULL) {
 		fputs("error", stderr);
 		exit(1);
 	}
 
-	while ((ch = fgetc(fp)) != EOF) {
-		data_vec.push_back(ch);
-	}
-
-	unsigned char compressed_data[ARRAY_MAX];
-
-	std::copy(data_vec.begin(), data_vec.end(), compressed_data);
-
-	initCoder(&coder, dm, compressed_data);
+	initCoder(&coder, dm, fp);
 
 	// Encoding variables
 	int y, x;
 	int x_o, x_h, x_v;
 	int pred, res, ctx;
 	unsigned int sym;
-	int dir;
+	int dir_;
 
 	// First Pixel
 	{
@@ -824,21 +814,22 @@ int ** Decoder::run_test() {
 			res = UNMAP(sym);
 
 			if (eitherHOR(x, y)) {
-				dir = coder.get_bit();
-				pred = (dir == HOR) ? x_h : x_v;
-				Dir[y][x] = dir;
+				dir_ = coder.get_bit();
+				pred = (dir_ == HOR) ? x_h : x_v;
 			}
 			else {
 				pred = x_v;
-				Dir[y][x] = VER;
 			}
 
 			x_o = res + pred;
+
+			Dir[y][x] = dir(x_o, T, x_v, x_h);
 
 			X_o[y][x] = x_o;
 
 			std::cout << x_o << std::ends;
 		}
+		std::cout << std::endl;
 	}
 
 	std::cout << std::endl;

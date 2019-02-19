@@ -112,7 +112,7 @@ private:
 	void set_local_activity();
 	void context_modeling();
 	int context(int x, int y);
-	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, unsigned char *compressed_data);
+	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, FILE *fp);
 	unsigned int decodemag(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
 	bool eitherHOR(int x, int y);
 };
