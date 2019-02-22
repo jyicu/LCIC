@@ -93,9 +93,10 @@ void main(int argc, char *argv[]) {
 	//int **X_o, **X_e;
 
 	//split_image(&U, &X_o, &X_e, &height, &width);
+	
 
-	//Hierarchical_decoder hd(T, K, symmax, height, width);
-	//hd.run("code.bin");
+	Hierarchical_decoder hd(T, K, symmax, 40, 40);
+	hd.run("code.bin");
 
 	//free2D(R);
 	//free2D(G);

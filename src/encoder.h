@@ -94,7 +94,7 @@ public:
 	Decoder(int **X_e, int T, int K, int symmax, int height, int width);
 	~Decoder();
 
-	int** run(unsigned char* compressed_data);
+	int** run(Arithmetic_Codec* pCoder);
 	int** run_test();
 
 private:
@@ -111,7 +111,7 @@ private:
 	void set_local_activity();
 	void context_modeling();
 	int context(int x, int y);
-	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, FILE *fp);
+	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
 	unsigned int decodemag(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
 	bool eitherHOR(int x, int y);
 };

@@ -270,7 +270,7 @@ void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int **
 @abstract : Check if split/concat/rotate/RCT functions work well
 */
 void check_result() {
-	char infile[] = "test_image.bmp";
+	char infile[] = "test.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 

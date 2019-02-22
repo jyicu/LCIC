@@ -152,20 +152,22 @@ int** Hierarchical_decoder::decode_jpeg2000(char* filename) {
 
 int Hierarchical_decoder::run(char filename[]) {
 
-	Arithmetic_Codec coder;
-
 	// Read in compressed data
 	FILE *fp;
 
-	if ((fp = fopen("code_test.bin", "rb")) == NULL) {
+	if ((fp = fopen(filename, "rb")) == NULL) {
 		fputs("error", stderr);
 		exit(1);
 	}
 
-
+	Arithmetic_Codec coder;
+	int size = width * height * 4;
+	coder.set_buffer(size);
+	coder.read_from_file(fp);
+	coder.stop_decoder();
 	//** TO DO **//
 	// 1. Decode Y, U_e2, V_e2
-	char infile[] = "./Kodak/kodim05.bmp";
+	char infile[] = "./test.bmp";
 	int **temp1, **temp2, **temp3, **temp4, **temp5, **temp6;
 
 	preprocess(infile, &Y, &temp1, &temp2, &temp3, &U_e2, &temp4, &temp5, &temp6, &V_e2, &height, &width);
@@ -178,8 +180,24 @@ int Hierarchical_decoder::run(char filename[]) {
 	// 2. Decode U_o2, V_o2
 	Decoder Uo2(U_e2, T, K, symMax, width / 2, height / 2);
 	Decoder Vo2(V_e2, T, K, symMax, width / 2, height / 2);
-	//U_o2 = Uo2.run(compressed_data);
-	//V_o2 = Vo2.run(compressed_data);
+	U_o2 = Uo2.run(&coder);
+	V_o2 = Vo2.run(&coder);
+
+	for (int i = 0; i < width / 2; i++) {
+		for (int j = 0; j < height / 2; j++) {
+			printf("%d ", V_o2[i][j]);
+		}
+		printf("\n");
+	}
+
+	printf("\n");
+
+	for (int i = 0; i < width / 2; i++) {
+		for (int j = 0; j < height / 2; j++) {
+			printf("%d ", temp5[i][j]);
+		}
+		printf("\n");
+	}
 
 	// 3. Build U_o1, V_o1 from (U_o2, U_e2) and (V_o2, V_e2)
 	int **U_e1_R, **V_e1_R;
@@ -194,8 +212,8 @@ int Hierarchical_decoder::run(char filename[]) {
 	// 4. Decode U_o1, V_o1
 	Decoder Uo1(U_e1, T, K, symMax, height / 2, width);
 	Decoder Vo1(V_e1, T, K, symMax, height / 2, width);
-	//U_o1 = Uo1.run(compressed_data);
-	//V_o1 = Uo1.run(compressed_data);
+	U_o1 = Uo1.run(&coder);
+	V_o1 = Vo1.run(&coder);
 
 	postprocess("Decoded_Result.bmp", &Y, &U_o1, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
 
@@ -632,17 +650,12 @@ int Decoder::context(int x, int y) {
 
 }
 
-void Decoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, FILE *fp) {
+void Decoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
 
 	for (int i = 0; i < K; i++) {
 		pDm[i].set_alphabet(symMax + 1);
 		pDm[i].set_distribution(0.9);
 	}
-
-	int size = width * height;
-	pCoder->set_buffer(size);
-	pCoder->read_from_file(fp);
-
 }
 
 unsigned int Decoder::decodemag(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
@@ -686,12 +699,13 @@ bool Decoder::eitherHOR(int x, int y) {
 	}
 }
 
-int ** Decoder::run(unsigned char* compressed_data) {
+int ** Decoder::run(Arithmetic_Codec* pCoder) {
 
-	Arithmetic_Codec coder;
+
 	Adaptive_Data_Model dm[NUM_CTX];
 
-	initCoder(&coder, dm, NULL);// fp 읽는 걸로 수정 필요, compressed_data 제거
+	initCoder(pCoder, dm);
+	pCoder->start_decoder();
 
 	// Encoding variables
 	int y, x;
@@ -705,17 +719,17 @@ int ** Decoder::run(unsigned char* compressed_data) {
 		y = 0;
 		x = 0;
 
-		ctx = context(x, y);
-
-		sym = decodemag(&coder, &dm[ctx]);
-
-		res = UNMAP(sym);
-
 		Dir[y][x] = VER;
 
 		x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 
 		pred = x_v;
+
+		ctx = context(x, y);
+
+		sym = decodemag(pCoder, &dm[ctx]);
+
+		res = UNMAP(sym);
 
 		x_o = res + pred;
 
@@ -731,19 +745,19 @@ int ** Decoder::run(unsigned char* compressed_data) {
 			x_h = (x == 0)          ? X_o[y - 1][x] : X_o[y][x - 1];
 			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 
-			ctx = context(x, y);
-
-			sym = decodemag(&coder, &dm[ctx]);
-
-			res = UNMAP(sym);
-
 			if (eitherHOR(x, y)) {
-				dir_ = coder.get_bit();
+				dir_ = pCoder->get_bit();
 				pred = (dir_ == HOR) ? x_h : x_v;
 			}
 			else {
 				pred = x_v;
 			}
+			
+			ctx = context(x, y);
+
+			sym = decodemag(pCoder, &dm[ctx]);
+
+			res = UNMAP(sym);
 
 			x_o = res + pred;
 			Dir[y][x] = dir(x_o, T, x_v, x_h);
@@ -753,9 +767,10 @@ int ** Decoder::run(unsigned char* compressed_data) {
 
 	//** TO DO **//
 	// Cut compressed data
-	unsigned int code_bytes = coder.get_code_bytes();
-	compressed_data = compressed_data + code_bytes;
-
+	unsigned int code_bytes = pCoder->get_code_bytes();
+	pCoder->stop_decoder();
+	printf("code_bytes : %d\n", code_bytes);
+	
 	return X_o;
 }
 
@@ -771,7 +786,7 @@ int ** Decoder::run_test() {
 		exit(1);
 	}
 
-	initCoder(&coder, dm, fp);
+	initCoder(&coder, dm);
 
 	// Encoding variables
 	int y, x;
