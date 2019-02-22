@@ -39,6 +39,30 @@ inline bool dir(int x_o, int T, int x_v, int x_h) {
 	return ((ABS(x_o - x_v)) > (ABS(x_o - x_h) + T) ? (HOR) : (VER));
 }
 
+int run_jasper8(int ** img, int height, int width, char* filename) {
+	FILE *out = fopen("temp.pgm", "wb");
+	unsigned char byte;
+	fprintf(out, "P5\n");
+	fprintf(out, "%d %d\n", width, height);
+	fprintf(out, "255\n");
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			byte = (int)(img[i][j]);
+			fwrite(&byte, sizeof(unsigned char), 1, out);
+		}
+	}
+	fclose(out);
+
+	char command[128];
+	sprintf(command, "jasper.exe --input temp.pgm --output %s --output-format jpc", filename);
+	system(command);
+
+	struct stat st;
+	stat(filename, &st);
+
+	return st.st_size;
+}
+
 Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K, int _symMax) {
 
 	preprocess(filename, &Y, &U_o1, &U_o2, &U_e1, &U_e2, &V_o1, &V_o2, &V_e1, &V_e2, &height, &width);
@@ -63,6 +87,8 @@ Hierarchical_coder::~Hierarchical_coder() {
 
 int Hierarchical_coder::run() {
 
+	int total_bytes = 0;
+
 	// open output file
 	char codefile[] = "code.bin";
 
@@ -71,24 +97,26 @@ int Hierarchical_coder::run() {
 		exit(-1);
 	}
 
-	/**TO DO **/
 	// 1. Encode Y, U_e2, V_e2
+	total_bytes += run_jasper8(Y, height, width, "y.jpc");
+	total_bytes += run_jasper8(U_e2, width / 2, height / 2, "u_e2.jpc");
+	total_bytes += run_jasper8(V_e2, width / 2, height / 2, "v_e2.jpc");
 
 	// 2. Encode U_o2, V_o2
 	Encoder Uo2(U_o2, U_e2, T, K, symMax, width / 2, height / 2);
 	Encoder Vo2(V_o2, V_e2, T, K, symMax, width / 2, height / 2);
-	Uo2.run(fp);
-	Vo2.run(fp);
+	total_bytes += Uo2.run(fp);
+	total_bytes += Vo2.run(fp);
 
 	// 3. Encode U_o1, V_o1
 	Encoder Uo1(U_o1, U_e1, T, K, symMax, height / 2, width);
 	Encoder Vo1(V_o1, V_e1, T, K, symMax, height / 2, width);
-	Uo1.run(fp);
-	Vo1.run(fp);
+	total_bytes += Uo1.run(fp);
+	total_bytes += Vo1.run(fp);
 
 	fclose(fp);
 
-	return 0;
+	return total_bytes;
 }
 
 Hierarchical_decoder::Hierarchical_decoder(int _T, int _K, int _symMax, int _height, int _width) {
@@ -113,38 +141,12 @@ Hierarchical_decoder::~Hierarchical_decoder() {
 	free2D(V_o2);
 }
 
-unsigned char* Hierarchical_decoder::readBinFile(char filename[]) {
-
-	if (!(fp = fopen(filename, "rb"))) {
-		fprintf(stderr, "Code file open error.\n");
-		exit(-1);
-	}
-
-	std::vector<unsigned char> data_vec;
-	int ch;
-
-	if ((fp = fopen(filename, "rb")) == NULL) {
-		fputs("error", stderr);
-		exit(1);
-	}
-
-	while ((ch = fgetc(fp)) != EOF) {
-		data_vec.push_back(ch);
-	}
-
-	unsigned char compressed_data[ARRAY_MAX];
-
-	std::copy(data_vec.begin(), data_vec.end(), compressed_data);
-
-	return compressed_data;
-}
-
-int** Hierarchical_decoder::decode_jpeg2000(unsigned char* compressed_data) {
-
-	//**TO DO**//
-	// Read Data
-	// Cut compressed data
-
+int** Hierarchical_decoder::decode_jpeg2000(char* filename) {
+	char command[128];
+	sprintf(command, "jasper.exe --input %s --output temp.bmp",filename);
+	system(command);
+	remove("temp.bmp");
+	// Need 1 channel BMP read
 	return alloc2D<int>(height, width);
 }
 
@@ -153,7 +155,13 @@ int Hierarchical_decoder::run(char filename[]) {
 	Arithmetic_Codec coder;
 
 	// Read in compressed data
-	unsigned char* compressed_data = readBinFile(filename);
+	FILE *fp;
+
+	if ((fp = fopen("code_test.bin", "rb")) == NULL) {
+		fputs("error", stderr);
+		exit(1);
+	}
+
 
 	//** TO DO **//
 	// 1. Decode Y, U_e2, V_e2
@@ -170,8 +178,8 @@ int Hierarchical_decoder::run(char filename[]) {
 	// 2. Decode U_o2, V_o2
 	Decoder Uo2(U_e2, T, K, symMax, width / 2, height / 2);
 	Decoder Vo2(V_e2, T, K, symMax, width / 2, height / 2);
-	U_o2 = Uo2.run(compressed_data);
-	V_o2 = Vo2.run(compressed_data);
+	//U_o2 = Uo2.run(compressed_data);
+	//V_o2 = Vo2.run(compressed_data);
 
 	// 3. Build U_o1, V_o1 from (U_o2, U_e2) and (V_o2, V_e2)
 	int **U_e1_R, **V_e1_R;
@@ -186,8 +194,8 @@ int Hierarchical_decoder::run(char filename[]) {
 	// 4. Decode U_o1, V_o1
 	Decoder Uo1(U_e1, T, K, symMax, height / 2, width);
 	Decoder Vo1(V_e1, T, K, symMax, height / 2, width);
-	U_o1 = Uo1.run(compressed_data);
-	V_o1 = Uo1.run(compressed_data);
+	//U_o1 = Uo1.run(compressed_data);
+	//V_o1 = Uo1.run(compressed_data);
 
 	postprocess("Decoded_Result.bmp", &Y, &U_o1, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
 
@@ -683,14 +691,14 @@ int ** Decoder::run(unsigned char* compressed_data) {
 	Arithmetic_Codec coder;
 	Adaptive_Data_Model dm[NUM_CTX];
 
-	initCoder(&coder, dm, NULL);
+	initCoder(&coder, dm, NULL);// fp 읽는 걸로 수정 필요, compressed_data 제거
 
 	// Encoding variables
 	int y, x;
 	int x_o, x_h, x_v;
 	int pred, res, ctx;
 	unsigned int sym;
-	int dir;
+	int dir_;
 
 	// First Pixel
 	{
@@ -730,17 +738,15 @@ int ** Decoder::run(unsigned char* compressed_data) {
 			res = UNMAP(sym);
 
 			if (eitherHOR(x, y)) {
-				dir = coder.get_bit();
-				pred = (dir == HOR) ? x_h : x_v;
-				Dir[y][x] = dir;
+				dir_ = coder.get_bit();
+				pred = (dir_ == HOR) ? x_h : x_v;
 			}
 			else {
 				pred = x_v;
-				Dir[y][x] = VER;
 			}
 
 			x_o = res + pred;
-
+			Dir[y][x] = dir(x_o, T, x_v, x_h);
 			X_o[y][x] = x_o;
 		}
 	}
@@ -779,17 +785,19 @@ int ** Decoder::run_test() {
 		y = 0;
 		x = 0;
 
-		ctx = context(x, y);
 
-		sym = decodemag(&coder, &dm[ctx]);
-
-		res = UNMAP(sym);
 
 		Dir[y][x] = VER;
 
 		x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 
 		pred = x_v;
+
+		ctx = context(x, y);
+
+		sym = decodemag(&coder, &dm[ctx]);
+
+		res = UNMAP(sym);
 
 		x_o = res + pred;
 
@@ -807,12 +815,6 @@ int ** Decoder::run_test() {
 			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
 			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 
-			ctx = context(x, y);
-
-			sym = decodemag(&coder, &dm[ctx]);
-
-			res = UNMAP(sym);
-
 			if (eitherHOR(x, y)) {
 				dir_ = coder.get_bit();
 				pred = (dir_ == HOR) ? x_h : x_v;
@@ -820,6 +822,12 @@ int ** Decoder::run_test() {
 			else {
 				pred = x_v;
 			}
+
+			ctx = context(x, y);
+
+			sym = decodemag(&coder, &dm[ctx]);
+
+			res = UNMAP(sym);
 
 			x_o = res + pred;
 

@@ -56,8 +56,7 @@ private:
 
 	int T, K, symMax;
 
-	int ** decode_jpeg2000(unsigned char* compressed_data);
-	unsigned char* readBinFile(char filename[]);
+	int ** decode_jpeg2000(char* filename);
 };
 
 

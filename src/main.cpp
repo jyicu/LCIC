@@ -46,42 +46,43 @@ int test_Kodak() {
 
 void main(int argc, char *argv[]) {
 	
-	check_result();
+	//check_result();
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "./Kodak/test.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
+	char infile[] = "test.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
 
-	int **R;
-	int **G;
-	int **B;
-	int **Y;
-	int **U;
-	int **V;
-	int height, width;
+	//int **R;
+	//int **G;
+	//int **B;
+	//int **Y;
+	//int **U;
+	//int **V;
+	//int height, width;
 
-	int **U_o1, **U_o2, **U_e1, **U_e2, **V_o1, **V_o2, **V_e1, **V_e2;
+	//int **U_o1, **U_o2, **U_e1, **U_e2, **V_o1, **V_o2, **V_e1, **V_e2;
 
 	int T = 3;
 	int K = 6;
 	int symmax = 40;
 
-	preprocess(infile, &Y, &U_o1, &U_o2, &U_e1, &U_e2, &V_o1, &V_o2, &V_e1, &V_e2, &height, &width);
+	//preprocess(infile, &Y, &U_o1, &U_o2, &U_e1, &U_e2, &V_o1, &V_o2, &V_e1, &V_e2, &height, &width);
 
-	Encoder encoder_test(U_o1, U_e1, T, K, symmax, height/2, width);
-	encoder_test.run_test();
 
-	int **U_o1_decoded;
+	//Encoder encoder_test(U_o1, U_e1, T, K, symmax, height/2, width);
+	//encoder_test.run_test();
 
-	Decoder decoder_test(U_e1, T, K, symmax, height/2, width);
-	U_o1_decoded = decoder_test.run_test();
+	//int **U_o1_decoded;
 
-	postprocess("Decoded_result.bmp", &Y, &U_o1_decoded, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
+	//Decoder decoder_test(U_e1, T, K, symmax, height/2, width);
+	//U_o1_decoded = decoder_test.run_test();
 
-	//Hierarchical_coder hc(infile, T, K, symmax);
-	//hc.run();
+	//postprocess("Decoded_result.bmp", &Y, &U_o1_decoded, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
+
+	Hierarchical_coder hc(infile, T, K, symmax);
+	hc.run();
 
 	//bmpRead(infile, &R, &G, &B, &height, &width);
 
