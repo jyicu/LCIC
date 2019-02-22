@@ -49,14 +49,11 @@ void main(int argc, char *argv[]) {
 	//check_result();
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "test.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
+	char infile[] = "lena.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
 
-	//int **R;
-	//int **G;
-	//int **B;
 	//int **Y;
 	//int **U;
 	//int **V;
@@ -83,27 +80,11 @@ void main(int argc, char *argv[]) {
 
 	Hierarchical_coder hc(infile, T, K, symmax);
 	hc.run();
-
-	//bmpRead(infile, &R, &G, &B, &height, &width);
-
-	//RGB2YUV(&R, &G, &B, &Y, &U, &V, &height, &width);
-	////Encoder enc(U, T, K, symmax, height, width);
-	////enc.run();
-
-	//int **X_o, **X_e;
-
-	//split_image(&U, &X_o, &X_e, &height, &width);
 	
 
-	Hierarchical_decoder hd(T, K, symmax, 40, 40);
+	Hierarchical_decoder hd(T, K, symmax, 512, 512);
 	hd.run("code.bin");
 
-	//free2D(R);
-	//free2D(G);
-	//free2D(B);
-	//free2D(Y);
-	//free2D(U);
-	//free2D(V);
 	return;
 }
 

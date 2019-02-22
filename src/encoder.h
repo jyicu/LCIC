@@ -65,7 +65,7 @@ public:
 	Encoder(int ** X_o, int ** X_e, int T, int K, int symmax, int height, int width);
 	~Encoder();
 
-	int run(FILE *fp);
+	int run(Arithmetic_Codec* pCoder, FILE *fp);
 	int run_test();
 
 private:

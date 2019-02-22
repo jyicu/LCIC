@@ -97,6 +97,12 @@ int Hierarchical_coder::run() {
 		exit(-1);
 	}
 
+	Arithmetic_Codec coder;
+	int size = width * height * 2;
+	coder.set_buffer(size);
+	coder.start_encoder();
+
+
 	// 1. Encode Y, U_e2, V_e2
 	total_bytes += run_jasper8(Y, height, width, "y.jpc");
 	total_bytes += run_jasper8(U_e2, width / 2, height / 2, "u_e2.jpc");
@@ -105,17 +111,18 @@ int Hierarchical_coder::run() {
 	// 2. Encode U_o2, V_o2
 	Encoder Uo2(U_o2, U_e2, T, K, symMax, width / 2, height / 2);
 	Encoder Vo2(V_o2, V_e2, T, K, symMax, width / 2, height / 2);
-	total_bytes += Uo2.run(fp);
-	total_bytes += Vo2.run(fp);
+	Uo2.run(&coder, fp);
+	Vo2.run(&coder, fp);
 
 	// 3. Encode U_o1, V_o1
 	Encoder Uo1(U_o1, U_e1, T, K, symMax, height / 2, width);
 	Encoder Vo1(V_o1, V_e1, T, K, symMax, height / 2, width);
-	total_bytes += Uo1.run(fp);
-	total_bytes += Vo1.run(fp);
+	Uo1.run(&coder, fp);
+	Vo1.run(&coder, fp);
 
+	total_bytes += coder.write_to_file(fp);
 	fclose(fp);
-
+	printf("%d bytes. %f bpp\n", total_bytes, 8.0*total_bytes / (height*width));
 	return total_bytes;
 }
 
@@ -161,13 +168,13 @@ int Hierarchical_decoder::run(char filename[]) {
 	}
 
 	Arithmetic_Codec coder;
-	int size = width * height * 4;
+	int size = width * height * 2;
 	coder.set_buffer(size);
 	coder.read_from_file(fp);
-	coder.stop_decoder();
+
 	//** TO DO **//
 	// 1. Decode Y, U_e2, V_e2
-	char infile[] = "./test.bmp";
+	char infile[] = "./lena.bmp";
 	int **temp1, **temp2, **temp3, **temp4, **temp5, **temp6;
 
 	preprocess(infile, &Y, &temp1, &temp2, &temp3, &U_e2, &temp4, &temp5, &temp6, &V_e2, &height, &width);
@@ -183,22 +190,6 @@ int Hierarchical_decoder::run(char filename[]) {
 	U_o2 = Uo2.run(&coder);
 	V_o2 = Vo2.run(&coder);
 
-	for (int i = 0; i < width / 2; i++) {
-		for (int j = 0; j < height / 2; j++) {
-			printf("%d ", V_o2[i][j]);
-		}
-		printf("\n");
-	}
-
-	printf("\n");
-
-	for (int i = 0; i < width / 2; i++) {
-		for (int j = 0; j < height / 2; j++) {
-			printf("%d ", temp5[i][j]);
-		}
-		printf("\n");
-	}
-
 	// 3. Build U_o1, V_o1 from (U_o2, U_e2) and (V_o2, V_e2)
 	int **U_e1_R, **V_e1_R;
 	int half_height = height / 2;
@@ -206,8 +197,8 @@ int Hierarchical_decoder::run(char filename[]) {
 	concat_image(&U_o2, &U_e2, &U_e1_R, &width, &half_height);
 	concat_image(&V_o2, &V_e2, &V_e1_R, &width, &half_height);
 
-	rotate_image(&U_e1_R, &U_e1, 0, &width, &half_height);
-	rotate_image(&V_e1_R, &V_e1, 0, &width, &half_height);
+	rotate_image(&U_e1_R, &U_e1, 1, &width, &half_height);
+	rotate_image(&V_e1_R, &V_e1, 1, &width, &half_height);
 
 	// 4. Decode U_o1, V_o1
 	Decoder Uo1(U_e1, T, K, symMax, height / 2, width);
@@ -236,8 +227,6 @@ Encoder::Encoder(int ** _X_o, int ** _X_e, int _T, int _K, int symMax_, int _hei
 }
 
 Encoder::~Encoder() {
-	//free2D(X_e);
-	//free2D(X_o);
 	free2D(sigma);
 	free2D(Dir);
 	delete[] q;
@@ -344,19 +333,13 @@ void Encoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
 		pDm[i].set_alphabet(symMax + 1);
 		pDm[i].set_distribution(0.9);
 	}
-
-	int size = width * height;
-	pCoder->set_buffer(size);
-	pCoder->start_encoder();
-
 }
 
-int Encoder::run(FILE *fp) {
+int Encoder::run(Arithmetic_Codec* pCoder,FILE *fp) {
 
-	Arithmetic_Codec coder;
 	Adaptive_Data_Model dm[NUM_CTX];
 
-	initCoder(&coder, dm);
+	initCoder(pCoder, dm);
 
 	// Counter Initialize
 	int Dir_counter[2] = { 0 };
@@ -389,7 +372,7 @@ int Encoder::run(FILE *fp) {
 		sym = MAP(res);
 		ctx = context(x, y);
 
-		encodeMag(sym, &coder, &dm[ctx]);
+		encodeMag(sym, pCoder, &dm[ctx]);
 
 		// Counter
 		Dir_counter[Dir[y][x]]++;
@@ -419,7 +402,7 @@ int Encoder::run(FILE *fp) {
 			Dir[y][x] = dir(x_o, T, x_v, x_h);
 
 			if (eitherHOR(x, y)) {
-				encodeDir(Dir[y][x], &coder);
+				encodeDir(Dir[y][x], pCoder);
 				pred = (Dir[y][x] == HOR) ? x_h : x_v;
 				if (Dir[y][x] == HOR)
 					x_h_counter++;
@@ -436,7 +419,7 @@ int Encoder::run(FILE *fp) {
 
 			//std::cout << "(y,x,sym) : " << y << ", " << x << ", " << sym << std::endl;
 
-			encodeMag(sym, &coder, &dm[ctx]);
+			encodeMag(sym, pCoder, &dm[ctx]);
 
 			Dir_counter[Dir[y][x]]++;
 			sym_counter[sym]++;
@@ -450,10 +433,10 @@ int Encoder::run(FILE *fp) {
 	float proportion = float(x_h_counter) / numPix;
 	printf("freq of selecting H prediction : %f\n", proportion);
 	
-	int bytes = coder.write_to_file(fp);
-	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / numPix);
+	//int bytes = pCoder->write_to_file(fp);
+	//printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / numPix);
 
-	return bytes;
+	return 0;
 }
 
 int Encoder::run_test() {
@@ -705,7 +688,6 @@ int ** Decoder::run(Arithmetic_Codec* pCoder) {
 	Adaptive_Data_Model dm[NUM_CTX];
 
 	initCoder(pCoder, dm);
-	pCoder->start_decoder();
 
 	// Encoding variables
 	int y, x;
@@ -726,13 +708,9 @@ int ** Decoder::run(Arithmetic_Codec* pCoder) {
 		pred = x_v;
 
 		ctx = context(x, y);
-
 		sym = decodemag(pCoder, &dm[ctx]);
-
 		res = UNMAP(sym);
-
 		x_o = res + pred;
-
 		X_o[y][x] = x_o;
 	}
 
@@ -754,11 +732,8 @@ int ** Decoder::run(Arithmetic_Codec* pCoder) {
 			}
 			
 			ctx = context(x, y);
-
 			sym = decodemag(pCoder, &dm[ctx]);
-
 			res = UNMAP(sym);
-
 			x_o = res + pred;
 			Dir[y][x] = dir(x_o, T, x_v, x_h);
 			X_o[y][x] = x_o;
@@ -768,7 +743,6 @@ int ** Decoder::run(Arithmetic_Codec* pCoder) {
 	//** TO DO **//
 	// Cut compressed data
 	unsigned int code_bytes = pCoder->get_code_bytes();
-	pCoder->stop_decoder();
 	printf("code_bytes : %d\n", code_bytes);
 	
 	return X_o;
