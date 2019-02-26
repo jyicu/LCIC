@@ -3,7 +3,6 @@
 #include "math.h"
 #include "assert.h"
 #include <vector>
-#include <windows.h>
 #include <iostream>
 
 #include "acfile\arithmetic_codec.h"
@@ -14,8 +13,6 @@
 #pragma warning(disable: 4996)
 
 typedef unsigned char UINT8;
-
-#define NUM_CTX	10
 
 #define MAX(x,y)	((x)>(y) ? (x) : (y))
 #define MIN(x,y)	((x)<(y) ? (x) : (y))
@@ -30,22 +27,28 @@ typedef unsigned char UINT8;
 
 int test_Kodak() {
 	int num_files = 24;
-	int bytes = 0;
-	int num_pix = 0;
+	float bpp = 0;
+
 	for (int i = 0; i < num_files; i++) {
 		char filename[20];
-		sprintf(filename, "./Kodak/kodim%d.bmp", i + 1);
+		if (i < 9)
+			sprintf(filename, "./Kodak/kodim0%d.bmp", i + 1);
+		else
+			sprintf(filename, "./Kodak/kodim%d.bmp", i + 1);
 		Hierarchical_coder coder(filename, 3, 6, 40);
-		bytes += coder.run();
-		num_pix;
+		bpp += coder.run();
 	}
-	float avg_bpp = float(bytes) / num_pix;
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+
 	return 0;
 }
 
 
 void main(int argc, char *argv[]) {
-	
+
 	//check_result();
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
@@ -54,37 +57,21 @@ void main(int argc, char *argv[]) {
 	char codefile[] = "code.bin";
 	FILE *fp;
 
-	//int **Y;
-	//int **U;
-	//int **V;
-	//int height, width;
-
-	//int **U_o1, **U_o2, **U_e1, **U_e2, **V_o1, **V_o2, **V_e1, **V_e2;
-
 	int T = 3;
 	int K = 6;
 	int symmax = 40;
 
-	//preprocess(infile, &Y, &U_o1, &U_o2, &U_e1, &U_e2, &V_o1, &V_o2, &V_e1, &V_e2, &height, &width);
-
-
-	//Encoder encoder_test(U_o1, U_e1, T, K, symmax, height/2, width);
-	//encoder_test.run_test();
-
-	//int **U_o1_decoded;
-
-	//Decoder decoder_test(U_e1, T, K, symmax, height/2, width);
-	//U_o1_decoded = decoder_test.run_test();
-
-	//postprocess("Decoded_result.bmp", &Y, &U_o1_decoded, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
+	std::cout << "======== Encoder ========" << std::endl;
 
 	Hierarchical_coder hc(infile, T, K, symmax);
 	hc.run();
 	
 
+	std::cout << "======== Decoder ========" << std::endl;
+
 	Hierarchical_decoder hd(T, K, symmax, 512, 512);
 	hd.run("code.bin");
-
+	
 	return;
 }
 
