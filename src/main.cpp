@@ -49,6 +49,8 @@ int test_Kodak() {
 
 void main(int argc, char *argv[]) {
 
+	//test_Kodak();
+
 	//check_result();
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
@@ -61,13 +63,8 @@ void main(int argc, char *argv[]) {
 	int K = 6;
 	int symmax = 40;
 
-	std::cout << "======== Encoder ========" << std::endl;
-
 	Hierarchical_coder hc(infile, T, K, symmax);
 	hc.run();
-	
-
-	std::cout << "======== Decoder ========" << std::endl;
 
 	Hierarchical_decoder hd(T, K, symmax, 512, 512);
 	hd.run("code.bin");

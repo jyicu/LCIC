@@ -37,6 +37,7 @@ private:
 	FILE *fp;
 
 	int T, K, symMax;
+	void initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm);
 };
 
 class Hierarchical_decoder {
@@ -57,6 +58,7 @@ private:
 	int T, K, symMax;
 
 	int ** decode_jpeg2000(char* filename);
+	void initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp);
 };
 
 
@@ -65,8 +67,7 @@ public:
 	Encoder(int ** X_o, int ** X_e, int T, int K, int symmax, int height, int width);
 	~Encoder();
 
-	int run(FILE *fp);
-	int run_test();
+	int run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp);
 
 private:
 	int height, width;
@@ -94,8 +95,7 @@ public:
 	Decoder(int **X_e, int T, int K, int symmax, int height, int width);
 	~Decoder();
 
-	int** run(FILE *fp);
-	int** run_test();
+	int** run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp);
 
 private:
 	int height, width;
