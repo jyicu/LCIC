@@ -46,12 +46,62 @@ int test_Kodak() {
 	return 0;
 }
 
+int run_jasper(char* filename, char* filename_jpc) {
+	
+	int **R, **G, **B;
+	int height, width;
+
+	bmpRead(filename, &R, &G, &B, &height, &width);
+
+	char command[128];
+	sprintf(command, "jasper.exe --input %s --output %s --output-format jpc", filename, filename_jpc);
+	system(command);
+
+	struct stat st;
+	stat(filename_jpc, &st);
+
+	int code_bytes = st.st_size;
+
+	float bpp = 8.0 * code_bytes / (width*height);
+
+	printf("%d bytes. %f bpp\n", code_bytes, bpp);
+
+	return bpp;
+}
+
+
+int test_kodak_jasper() {
+
+	int num_files = 24;
+	float bpp = 0;
+
+	char filename[20];
+	char filename_jpc[20];
+
+	for (int i = 0; i < num_files; i++) {
+		if (i < 9) {
+			sprintf(filename, "./Kodak/kodim0%d.bmp", i + 1);
+			sprintf(filename_jpc, "./result/kodim0%d.jpc", i + 1);
+		}
+		else {
+			sprintf(filename, "./Kodak/kodim%d.bmp", i + 1);
+			sprintf(filename_jpc, "./result/kodim%d.jpc", i + 1);
+		}
+		
+		printf("==== Image : %s ====\n", filename);
+
+		bpp += run_jasper(filename, filename_jpc);
+
+	}
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+
+	return 0;
+}
 
 void main(int argc, char *argv[]) {
-
-	//test_Kodak();
-
-	//check_result();
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
 	char infile[] = "lena.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
@@ -63,11 +113,14 @@ void main(int argc, char *argv[]) {
 	int K = 6;
 	int symmax = 40;
 
+	//test_kodak_jasper();
+	//run_jasper(infile, "result/lena.jpc");
+
 	Hierarchical_coder hc(infile, T, K, symmax);
 	hc.run();
 
-	Hierarchical_decoder hd(T, K, symmax, 512, 512);
-	hd.run("code.bin");
+	Hierarchical_decoder hd;
+	hd.run("code.bin", infile);
 	
 	return;
 }

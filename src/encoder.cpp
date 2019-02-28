@@ -75,6 +75,8 @@ Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K, int _sym
 	T = _T;
 	K = _K;
 	symMax = _symMax;
+
+	printf("(T, K, symMax, Height, Width) = (%d, %d, %d, %d, %d)\n", T, K, symMax, height, width);
 }
 
 Hierarchical_coder::~Hierarchical_coder() {
@@ -100,6 +102,9 @@ int Hierarchical_coder::run() {
 		fprintf(stderr, "Code file open error.\n");
 		exit(-1);
 	}
+
+	// 0. Encode Parameters
+	encode_params(fp);
 
 	// 1. Encode Y, U_e2, V_e2
 	jasper_total_bytes += run_jasper8(Y, height, width, "y.jpc");
@@ -148,7 +153,25 @@ int Hierarchical_coder::run() {
 	printf("Total (w/o japser)  : %d bytes. %f bpp\n", uv_total_bytes, uv_bpp);
 	printf("Total (with jasper) : %d bytes. %f bpp\n", total_bytes, bpp);
 
-	return uv_bpp;
+	return bpp;
+}
+
+int Hierarchical_coder::encode_params(FILE *fp) {
+
+	Arithmetic_Codec coder;
+
+	coder.set_buffer(height*width);
+	coder.start_encoder();
+
+	// Encode T, K, symMax, height, width
+
+	coder.put_bits(T,       4);
+	coder.put_bits(K,       4);
+	coder.put_bits(symMax,  9);
+	coder.put_bits(height, 20);
+	coder.put_bits(width,  20);
+
+	return coder.write_to_file(fp);;
 }
 
 void Hierarchical_coder::initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm) {
@@ -162,16 +185,10 @@ void Hierarchical_coder::initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model
 	pCoder->start_encoder();
 }
 
-Hierarchical_decoder::Hierarchical_decoder(int _T, int _K, int _symMax, int _height, int _width) {
+Hierarchical_decoder::Hierarchical_decoder() {
 
 	std::cout << "======== Decoder ========" << std::endl;
 
-	// Encoding variables
-	T = _T;
-	K = _K;
-	symMax = _symMax;
-	height = _height;
-	width = _width;
 }
 
 Hierarchical_decoder::~Hierarchical_decoder() {
@@ -195,7 +212,7 @@ int** Hierarchical_decoder::decode_jpeg2000(char* filename) {
 	return alloc2D<int>(height, width);
 }
 
-int Hierarchical_decoder::run(char filename[]) {
+int Hierarchical_decoder::run(char filename[], char imagename[]) {
 
 	// Read in compressed data
 	FILE *fp;
@@ -205,14 +222,14 @@ int Hierarchical_decoder::run(char filename[]) {
 		exit(1);
 	}
 
-	// 1. Decode Y, U_e2, V_e2
-	char infile[] = "lena.bmp";
+	decode_params(fp);
 
-	std::cout << "Image : " << infile << std::endl;
+	// 1. Decode Y, U_e2, V_e2
+	printf("Image : %s\n", imagename);
 
 	int **temp1, **temp2, **temp3, **temp4, **temp5, **temp6;
 
-	preprocess(infile, &Y, &temp1, &temp2, &temp3, &U_e2, &temp4, &temp5, &temp6, &V_e2, &height, &width);
+	preprocess(imagename, &Y, &temp1, &temp2, &temp3, &U_e2, &temp4, &temp5, &temp6, &V_e2, &height, &width);
 
 	//Y    = decode_jpeg2000(compressed_data);
 	//U_e2 = decode_jpeg2000(compressed_data);
@@ -227,6 +244,7 @@ int Hierarchical_decoder::run(char filename[]) {
 	initCoder(&U_coder, U_dm, fp);
 
 	// b) Decode U_o2
+	printf("U_o2      : ");
 	Decoder Uo2(U_e2, T, K, symMax, width / 2, height / 2);
 	U_o2 = Uo2.run(&U_coder, U_dm, fp);
 
@@ -238,6 +256,7 @@ int Hierarchical_decoder::run(char filename[]) {
 	rotate_image(&U_e1_R, &U_e1, 1, &width, &half_height);
 
 	// d) Decode U_o1
+	printf("U Channel : ");
 	Decoder Uo1(U_e1, T, K, symMax, height / 2, width);
 
 	U_o1 = Uo1.run(&U_coder, U_dm, fp);
@@ -250,6 +269,7 @@ int Hierarchical_decoder::run(char filename[]) {
 	initCoder(&V_coder, V_dm, fp);
 	
 	// b) Decode V_o2
+	printf("V_o2      : ");
 	Decoder Vo2(V_e2, T, K, symMax, width / 2, height / 2);
 	V_o2 = Vo2.run(&V_coder, V_dm, fp);
 
@@ -260,6 +280,7 @@ int Hierarchical_decoder::run(char filename[]) {
 	rotate_image(&V_e1_R, &V_e1, 1, &width, &half_height);
 
 	// d) Decode V_o1
+	printf("V Channel : ");
 	Decoder Vo1(V_e1, T, K, symMax, height / 2, width);
 	V_o1 = Vo1.run(&V_coder, V_dm, fp);
 
@@ -268,6 +289,26 @@ int Hierarchical_decoder::run(char filename[]) {
 	fclose(fp);
 
 	return 0;
+}
+
+int Hierarchical_decoder::decode_params(FILE *fp) {
+
+	Arithmetic_Codec coder;
+
+	coder.set_buffer(100);
+	coder.read_from_file(fp);
+
+	// Decode T, K, symMax, height, width
+
+	T      = coder.get_bits(4);
+	K      = coder.get_bits(4);
+	symMax = coder.get_bits(9);
+	height = coder.get_bits(20);
+	width  = coder.get_bits(20);
+
+	printf("(T, K, symMax, Height, Width) = (%d, %d, %d, %d, %d)\n", T, K, symMax, height, width);
+
+	return coder.get_code_bytes();
 }
 
 void Hierarchical_decoder::initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
