@@ -48,8 +48,39 @@ int run_jasper8(int ** img, int height, int width, char* filename) {
 	fprintf(out, "255\n");
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			byte = (int)(img[i][j]);
+			byte = (unsigned char)(img[i][j]);
 			fwrite(&byte, sizeof(unsigned char), 1, out);
+		}
+	}
+	fclose(out);
+
+	char command[128];
+	sprintf(command, "jasper.exe --input temp.pgm --output %s --output-format jpc", filename);
+	system(command);
+
+	struct stat st;
+	stat(filename, &st);
+
+	return st.st_size;
+}
+
+inline void endian_swap(unsigned short& x)
+{
+	x = (x >> 8) |
+		(x << 8);
+}
+
+int run_jasper16(int ** img, int height, int width, char* filename) {
+	FILE *out = fopen("temp.pgm", "wb");
+	unsigned short byte;
+	fprintf(out, "P5\n");
+	fprintf(out, "%d %d\n", width, height);
+	fprintf(out, "65535\n");
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			byte = (unsigned short)(img[i][j] + 256);
+			endian_swap(byte);
+			fwrite(&byte, sizeof(unsigned short), 1, out);
 		}
 	}
 	fclose(out);
@@ -108,8 +139,8 @@ int Hierarchical_coder::run() {
 
 	// 1. Encode Y, U_e2, V_e2
 	jasper_total_bytes += run_jasper8(Y, height, width, "y.jpc");
-	jasper_total_bytes += run_jasper8(U_e2, width / 2, height / 2, "u_e2.jpc");
-	jasper_total_bytes += run_jasper8(V_e2, width / 2, height / 2, "v_e2.jpc");
+	jasper_total_bytes += run_jasper16(U_e2, width / 2, height / 2, "u_e2_16.jpc");
+	jasper_total_bytes += run_jasper16(V_e2, width / 2, height / 2, "v_e2_16.jpc");
 
 	// Declare coder / data model for U,V channel each
 	Arithmetic_Codec U_coder, V_coder;
@@ -398,7 +429,9 @@ void Encoder::encodeMag(unsigned int sym, Arithmetic_Codec *pCoder, Adaptive_Dat
 
 	if (sym >= symMax) {
 		pCoder->encode(symMax, *pDm);
-		pCoder->put_bits(sym, FIXED_BITS);
+		sym -= symMax;
+		pCoder->put_bit(sym & 1);
+		encodeMag(sym >> 1, pCoder, pDm);
 	}
 	
 	else 
@@ -465,6 +498,10 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 	int pred, res, ctx;
 	unsigned int sym;
 
+	// Data model for dir encoding
+	Adaptive_Data_Model dir_dm;
+	dir_dm.set_alphabet(2);
+	dir_dm.set_distribution(0.9);
 
 	// First Pixel
 	{
@@ -513,7 +550,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 			Dir[y][x] = dir(x_o, T, x_v, x_h);
 
 			if (eitherHOR(x, y)) {
-				encodeDir(Dir[y][x], pCoder);
+				pCoder->encode(Dir[y][x], dir_dm);
 				pred = (Dir[y][x] == HOR) ? x_h : x_v;
 				if (Dir[y][x] == HOR)
 					x_h_counter++;
@@ -633,12 +670,12 @@ unsigned int Decoder::decodemag(Arithmetic_Codec *pCoder, Adaptive_Data_Model *p
 
 	sym = pCoder->decode(*pDm);
 
-	if (sym == symMax)
-		return pCoder->get_bits(FIXED_BITS);
+	if (sym == symMax) {
+		sym += pCoder->get_bit();
+		sym += (decodemag(pCoder, pDm) << 1);
+	}
 
-	else
-		return sym;
-
+	return sym;
 }
 
 bool Decoder::eitherHOR(int x, int y) {
@@ -677,6 +714,11 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 	unsigned int sym;
 	int dir_;
 
+	// Data model for dir encoding
+	Adaptive_Data_Model dir_dm;
+	dir_dm.set_alphabet(2);
+	dir_dm.set_distribution(0.9);
+
 	// First Pixel
 	{
 		y = 0;
@@ -705,7 +747,7 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 
 			if (eitherHOR(x, y)) {
-				dir_ = pCoder->get_bit();
+				dir_ = pCoder->decode(dir_dm);
 				pred = (dir_ == HOR) ? x_h : x_v;
 			}
 			else {
