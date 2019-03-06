@@ -26,7 +26,7 @@ public:
 	Hierarchical_coder(char filename[], int T, int K, int symMax);
 	~Hierarchical_coder();
 
-	int run();
+	float run();
 
 private:
 	int height, width;

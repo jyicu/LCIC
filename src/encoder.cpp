@@ -122,7 +122,7 @@ Hierarchical_coder::~Hierarchical_coder() {
 	free2D(V_o2);
 }
 
-int Hierarchical_coder::run() {
+float Hierarchical_coder::run() {
 
 	int jasper_total_bytes = 0, u_total_bytes, v_total_bytes;
 

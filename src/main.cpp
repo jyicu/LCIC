@@ -31,10 +31,7 @@ int test_Kodak() {
 
 	for (int i = 0; i < num_files; i++) {
 		char filename[20];
-		if (i < 9)
-			sprintf(filename, "./Kodak/kodim0%d.bmp", i + 1);
-		else
-			sprintf(filename, "./Kodak/kodim%d.bmp", i + 1);
+		sprintf(filename, "./Kodak/kodim%02d.bmp", i + 1);
 		Hierarchical_coder coder(filename, 3, 6, 40);
 		bpp += coder.run();
 	}
@@ -46,7 +43,7 @@ int test_Kodak() {
 	return 0;
 }
 
-int run_jasper(char* filename, char* filename_jpc) {
+float run_jasper(char* filename, char* filename_jpc) {
 	
 	int **R, **G, **B;
 	int height, width;
@@ -113,6 +110,7 @@ void main(int argc, char *argv[]) {
 	int K = 6;
 	int symmax = 40;
 
+	test_Kodak();
 	//test_kodak_jasper();
 	//run_jasper(infile, "result/lena.jpc");
 
