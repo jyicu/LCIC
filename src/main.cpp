@@ -110,7 +110,7 @@ void main(int argc, char *argv[]) {
 	int K = 6;
 	int symmax = 40;
 
-	test_Kodak();
+	//test_Kodak();
 	//test_kodak_jasper();
 	//run_jasper(infile, "result/lena.jpc");
 

@@ -236,11 +236,16 @@ Hierarchical_decoder::~Hierarchical_decoder() {
 
 int** Hierarchical_decoder::decode_jpeg2000(char* filename) {
 	char command[128];
-	sprintf(command, "jasper.exe --input %s --output temp.bmp",filename);
+	sprintf(command, "jasper.exe --input %s --output temp.bmp", filename);
 	system(command);
+
+	int **data;
+
+	bmpRead_1c("temp.bmp", &data);
+
 	remove("temp.bmp");
-	// Need 1 channel BMP read
-	return alloc2D<int>(height, width);
+
+	return data;
 }
 
 int Hierarchical_decoder::run(char filename[], char imagename[]) {
@@ -262,8 +267,8 @@ int Hierarchical_decoder::run(char filename[], char imagename[]) {
 
 	preprocess(imagename, &Y, &temp1, &temp2, &temp3, &U_e2, &temp4, &temp5, &temp6, &V_e2, &height, &width);
 
-	//Y    = decode_jpeg2000(compressed_data);
-	//U_e2 = decode_jpeg2000(compressed_data);
+	Y    = decode_jpeg2000("y.jpc");
+	//U_e2 = decode_jpeg2000("u_e2_16.jpc");
 	//V_e2 = decode_jpeg2000(compressed_data);
 
 	// 2. Decode U_o2, U_o1

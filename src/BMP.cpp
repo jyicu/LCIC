@@ -47,12 +47,62 @@ void bmpRead(char filename[], int ***red, int ***green, int ***blue, int *height
 	*green = alloc2D(h, w);
 	*blue = alloc2D(h, w);
 
+	int idx;
+
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 			
-			(*red)[y][x] = img[(x + y * w) * 3 + 2];
-			(*green)[y][x] = img[(x + y * w) * 3 + 1];
-			(*blue)[y][x] = img[(x + y * w) * 3 + 0];
+			idx = (x + (h - y - 1)*w) * 3;
+
+			(*red)[y][x] = img[idx + 2];
+			(*green)[y][x] = img[idx + 1];
+			(*blue)[y][x] = img[idx + 0];
+		}
+	}
+
+	delete(img);
+	fclose(f);
+}
+
+void bmpRead_1c(char filename[], int ***data) {
+
+	FILE *f;
+	fopen_s(&f, filename, "rb");
+
+	unsigned char* header = new unsigned char[54];
+
+	fread(header, sizeof(unsigned char), 54, f);
+
+	int w = *(int*)&header[18];
+	int h = *(int*)&header[22];
+
+	unsigned char *img = new unsigned char[w*h];
+	memset(img, 0, w*h);
+
+	// Read in 2 dummy lines
+	fread(img, 1, 2*w, f);
+
+	for (int i = 0; i < h; i++)
+	{
+		fread(img + w * i, 1, w, f);
+
+		for (int j = 0; j<(4 - (w * 3) % 4) % 4; j++)
+			fgetc(f);
+	}
+
+	*data = alloc2D(h, w);
+
+	int idx;
+	int value;
+
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+
+			idx = (x + (h - y - 1)*w);
+
+			value = img[idx];
+
+			(*data)[y][x] = img[idx];
 		}
 	}
 
@@ -101,7 +151,7 @@ void bmpWrite(char filename[], int **red, int **green, int **blue, int h, int w)
 	
 	for (int y = 0; y < h; y++)
 	{
-		fwrite(img + w * y * 3, 3, w, f);
+		fwrite(img + w * (h-y-1) * 3, 3, w, f);
 		fwrite(bmppad, 1, (4 - (w * 3) % 4) % 4, f);
 	}
 

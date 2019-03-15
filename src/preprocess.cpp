@@ -73,7 +73,7 @@ void rotate_image(int ***C, int ***R, int direction, int *height, int *width)
 {
 	*R = alloc2D(*width, *height);
 
-	if (direction == CLOCKWISE) {
+	if (direction == COUNTER_CLOCKWISE) {
 		for (int y = 0; y < *height; y++) {
 			for (int x = 0; x < *width; x++) {
 				(*R)[*width - x - 1][y] = (*C)[y][x];
@@ -270,7 +270,7 @@ void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int **
 @abstract : Check if split/concat/rotate/RCT functions work well
 */
 void check_result() {
-	char infile[] = "test.bmp";
+	char infile[] = "lena.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 
@@ -313,13 +313,13 @@ void check_result() {
 	int **ROTC_G, **ROTCC_G;
 	int **ROTC_B, **ROTCC_B;
 
-	rotate_image(&R, &ROTC_R, 0, &height, &width);
-	rotate_image(&G, &ROTC_G, 0, &height, &width);
-	rotate_image(&B, &ROTC_B, 0, &height, &width);
+	rotate_image(&R, &ROTC_R, CLOCKWISE, &height, &width);
+	rotate_image(&G, &ROTC_G, CLOCKWISE, &height, &width);
+	rotate_image(&B, &ROTC_B, CLOCKWISE, &height, &width);
 
-	rotate_image(&R, &ROTCC_R, 1, &height, &width);
-	rotate_image(&G, &ROTCC_G, 1, &height, &width);
-	rotate_image(&B, &ROTCC_B, 1, &height, &width);
+	rotate_image(&R, &ROTCC_R, COUNTER_CLOCKWISE, &height, &width);
+	rotate_image(&G, &ROTCC_G, COUNTER_CLOCKWISE, &height, &width);
+	rotate_image(&B, &ROTCC_B, COUNTER_CLOCKWISE, &height, &width);
 
 	char rotation_clock[] = "result/Rot_clock.bmp";
 	char rotation_cc[] = "result/Rot_counterclock.bmp";
