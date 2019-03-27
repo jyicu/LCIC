@@ -101,7 +101,7 @@ int test_kodak_jasper() {
 void main(int argc, char *argv[]) {
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "./mandrill.bmp";
+	char infile[] = "lena.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
@@ -113,7 +113,7 @@ void main(int argc, char *argv[]) {
 	test_Kodak(T,K,symmax);
 	//test_kodak_jasper();
 	//run_jasper(infile, "result/mandrill.jpc");
-
+	//check_result();
 	Hierarchical_coder hc(infile, T, K, symmax);
 	hc.run();
 

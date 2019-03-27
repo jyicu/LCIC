@@ -87,7 +87,6 @@ private:
 	int context(int x, int y);
 	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
 	void encodeMag(unsigned int sym, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
-	void encodeDir(int dir, Arithmetic_Codec *pCoder);
 	bool eitherHOR(int x, int y);
 };
 

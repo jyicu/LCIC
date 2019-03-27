@@ -26,9 +26,9 @@ void split_image(int ***C, int ***ODD, int ***EVEN, int *height, int *width)
 	for (int y = 0; y < *height; y++) {
 		for (int x = 0; x < *width; x++) {
 			if (y % 2 == 0)
-				(*ODD)[y / 2][x] = (*C)[y][x];
+				(*EVEN)[y / 2][x] = (*C)[y][x];
 			else
-				(*EVEN)[(y - 1) / 2][x] = (*C)[y][x];
+				(*ODD)[(y - 1) / 2][x] = (*C)[y][x];
 		}
 	}
 }
@@ -51,9 +51,9 @@ void concat_image(int ***ODD, int ***EVEN, int ***CONCAT, int *height, int *widt
 	for (int y = 0; y < *height; y++) {
 		for (int x = 0; x < *width; x++) {
 			if (y % 2 == 0)
-				(*CONCAT)[y][x] = (*ODD)[y / 2][x];
+				(*CONCAT)[y][x] = (*EVEN)[y / 2][x];
 			else
-				(*CONCAT)[y][x] = (*EVEN)[(y - 1) / 2][x];
+				(*CONCAT)[y][x] = (*ODD)[(y - 1) / 2][x];
 		}
 	}
 }

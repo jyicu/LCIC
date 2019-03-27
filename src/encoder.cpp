@@ -206,9 +206,9 @@ int Hierarchical_coder::encode_params(FILE *fp) {
 
 	coder.put_bits(T,       4);
 	coder.put_bits(K,       4);
-	coder.put_bits(symMax,  9);
-	coder.put_bits(height, 20);
-	coder.put_bits(width,  20);
+	coder.put_bits(symMax,  8);
+	coder.put_bits(height, 16);
+	coder.put_bits(width,  16);
 
 	return coder.write_to_file(fp);;
 }
@@ -346,9 +346,9 @@ int Hierarchical_decoder::decode_params(FILE *fp) {
 
 	T      = coder.get_bits(4);
 	K      = coder.get_bits(4);
-	symMax = coder.get_bits(9);
-	height = coder.get_bits(20);
-	width  = coder.get_bits(20);
+	symMax = coder.get_bits(8);
+	height = coder.get_bits(16);
+	width  = coder.get_bits(16);
 
 	printf("(T, K, symMax, Height, Width) = (%d, %d, %d, %d, %d)\n", T, K, symMax, height, width);
 
@@ -449,21 +449,25 @@ void Encoder::encodeMag(unsigned int sym, Arithmetic_Codec *pCoder, Adaptive_Dat
 	
 	else 
 		pCoder->encode(sym, *pDm);
+	//if (sym < symMax) {
+	//	pCoder->encode(sym, *pDm);
+	//}
+	//else if (sym < 64) {
+	//	pCoder->encode(symMax, *pDm);
+	//	pCoder->put_bits((sym - 40), 5);
+	//}
+	//else if (sym < 128) {
+	//	pCoder->encode(symMax + 1, *pDm);
+	//	pCoder->put_bits((sym - 64), 6);
+	//}
+	//else {
+	//	pCoder->encode(symMax + 2, *pDm);
+	//	pCoder->put_bits((sym - 128), 7);
+	//}
 	
 }
 
-void Encoder::encodeDir(int dir, Arithmetic_Codec *pCoder) {
-
-	pCoder->put_bit(dir);
-
-}
-
 bool Encoder::eitherHOR(int x, int y) {
-	//if (y != 0 && x != 0) {
-	//	if (Dir[y - 1][x] == HOR || Dir[y][x - 1] == HOR)
-	//		return true;
-	//}
-	//return false;
 	if (y == 0 && x == 0)
 		return false;
 
@@ -559,7 +563,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 			//  HOR/VER pixel prediction //
 			//===========================//
 			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
-			x_v = (y ==0) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y - 1][x]));
+			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
 
 			//===========================//
 			//     Encode Direction      //
@@ -602,22 +606,6 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 		}
 	}
 	cv::imwrite("idx.bmp", aa);
-
-	cv::Mat bb(height, width, CV_8UC1);
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			bb.at<unsigned char>(i, j) = (unsigned)(Dir[i][j]);
-		}
-	}
-	cv::imwrite("dir.bmp", bb);
-
-	cv::Mat cc(height, width, CV_8UC1);
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			cc.at<unsigned char>(i, j) = 255*(unsigned)(eitherHOR(j,i));
-		}
-	}
-	cv::imwrite("hor.bmp", cc);
 
 	return 0;
 }
