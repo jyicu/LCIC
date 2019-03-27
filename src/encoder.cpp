@@ -11,8 +11,7 @@
 #include "preprocess.h"
 #include "BMP.h"
 #include "acfile/arithmetic_codec.h"
-#include <opencv2/core.hpp>
-#include <opencv2/opencv.hpp>
+
 
 #define NUM_CTX 6
 #define HOR 1
