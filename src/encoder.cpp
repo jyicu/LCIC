@@ -11,6 +11,8 @@
 #include "preprocess.h"
 #include "BMP.h"
 #include "acfile/arithmetic_codec.h"
+#include <opencv2/core.hpp>
+#include <opencv2/opencv.hpp>
 
 #define NUM_CTX 6
 #define HOR 1
@@ -138,10 +140,16 @@ float Hierarchical_coder::run() {
 	encode_params(fp);
 
 	// 1. Encode Y, U_e2, V_e2
-	jasper_total_bytes += run_jasper8(Y, height, width, "y.jpc");
-	jasper_total_bytes += run_jasper16(U_e2, width / 2, height / 2, "u_e2_16.jpc");
-	jasper_total_bytes += run_jasper16(V_e2, width / 2, height / 2, "v_e2_16.jpc");
-
+	int bytes;
+	bytes = run_jasper8(Y, height, width, "y.jpc");
+	printf("Y:%d\n", bytes);
+	jasper_total_bytes += bytes;
+	bytes = run_jasper16(U_e2, width / 2, height / 2, "u_e2_16.jpc");
+	printf("Ue2:%d\n", bytes);
+	jasper_total_bytes += bytes;
+	bytes = run_jasper16(V_e2, width / 2, height / 2, "v_e2_16.jpc");
+	printf("Ve2:%d\n", bytes);
+	jasper_total_bytes += bytes;
 	// Declare coder / data model for U,V channel each
 	Arithmetic_Codec U_coder, V_coder;
 	Adaptive_Data_Model U_dm[NUM_CTX], V_dm[NUM_CTX];
@@ -157,7 +165,7 @@ float Hierarchical_coder::run() {
 	Uo1.run(&U_coder, U_dm, fp);
 
 	u_total_bytes = U_coder.write_to_file(fp);
-
+	printf("Ut:%d\n", u_total_bytes);
 	// 3. Encode V_o2, V_o1
 	Encoder Vo2(V_o2, V_e2, T, K, symMax, width / 2, height / 2);
 	Encoder Vo1(V_o1, V_e1, T, K, symMax, height / 2, width);
@@ -166,7 +174,7 @@ float Hierarchical_coder::run() {
 	Vo1.run(&V_coder, V_dm, fp);
 
 	v_total_bytes = V_coder.write_to_file(fp);
-
+	printf("Vt:%d\n", v_total_bytes);
 	fclose(fp);
 
 	// Calculate bpp
@@ -267,7 +275,7 @@ int Hierarchical_decoder::run(char filename[], char imagename[]) {
 
 	preprocess(imagename, &Y, &temp1, &temp2, &temp3, &U_e2, &temp4, &temp5, &temp6, &V_e2, &height, &width);
 
-	Y    = decode_jpeg2000("y.jpc");
+	//Y    = decode_jpeg2000("y.jpc");
 	//U_e2 = decode_jpeg2000("u_e2_16.jpc");
 	//V_e2 = decode_jpeg2000(compressed_data);
 
@@ -451,7 +459,11 @@ void Encoder::encodeDir(int dir, Arithmetic_Codec *pCoder) {
 }
 
 bool Encoder::eitherHOR(int x, int y) {
-
+	//if (y != 0 && x != 0) {
+	//	if (Dir[y - 1][x] == HOR || Dir[y][x - 1] == HOR)
+	//		return true;
+	//}
+	//return false;
 	if (y == 0 && x == 0)
 		return false;
 
@@ -547,7 +559,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 			//  HOR/VER pixel prediction //
 			//===========================//
 			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
-			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+			x_v = (y ==0) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y - 1][x]));
 
 			//===========================//
 			//     Encode Direction      //
@@ -582,7 +594,30 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 
 	//coder
 	float proportion = float(x_h_counter) / numPix;
-	//printf("freq of selecting H prediction : %f\n", proportion);
+	printf("freq of selecting H prediction : %f\n", proportion);
+	cv::Mat aa(height, width, CV_8UC1);
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			aa.at<unsigned char>(i, j) = (unsigned)(eitherHOR(j, i)&Dir[i][j]);
+		}
+	}
+	cv::imwrite("idx.bmp", aa);
+
+	cv::Mat bb(height, width, CV_8UC1);
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			bb.at<unsigned char>(i, j) = (unsigned)(Dir[i][j]);
+		}
+	}
+	cv::imwrite("dir.bmp", bb);
+
+	cv::Mat cc(height, width, CV_8UC1);
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			cc.at<unsigned char>(i, j) = 255*(unsigned)(eitherHOR(j,i));
+		}
+	}
+	cv::imwrite("hor.bmp", cc);
 
 	return 0;
 }

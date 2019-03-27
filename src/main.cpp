@@ -25,14 +25,14 @@ typedef unsigned char UINT8;
 #define UINT8(x)	CLIP255(ROUND(x))
 
 
-int test_Kodak() {
+int test_Kodak(int T, int K, int SymMax) {
 	int num_files = 24;
 	float bpp = 0;
 
 	for (int i = 0; i < num_files; i++) {
 		char filename[20];
 		sprintf(filename, "./Kodak/kodim%02d.bmp", i + 1);
-		Hierarchical_coder coder(filename, 3, 6, 40);
+		Hierarchical_coder coder(filename, T, K, SymMax);
 		bpp += coder.run();
 	}
 
@@ -77,11 +77,11 @@ int test_kodak_jasper() {
 
 	for (int i = 0; i < num_files; i++) {
 		if (i < 9) {
-			sprintf(filename, "./Kodak/kodim0%d.bmp", i + 1);
+			sprintf(filename, "./Kodak/kodim0%d.pnm", i + 1);
 			sprintf(filename_jpc, "./result/kodim0%d.jpc", i + 1);
 		}
 		else {
-			sprintf(filename, "./Kodak/kodim%d.bmp", i + 1);
+			sprintf(filename, "./Kodak/kodim%d.pnm", i + 1);
 			sprintf(filename_jpc, "./result/kodim%d.jpc", i + 1);
 		}
 		
@@ -101,7 +101,7 @@ int test_kodak_jasper() {
 void main(int argc, char *argv[]) {
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "lena.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
+	char infile[] = "./mandrill.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
@@ -110,9 +110,9 @@ void main(int argc, char *argv[]) {
 	int K = 6;
 	int symmax = 40;
 
-	//test_Kodak();
+	test_Kodak(T,K,symmax);
 	//test_kodak_jasper();
-	//run_jasper(infile, "result/lena.jpc");
+	//run_jasper(infile, "result/mandrill.jpc");
 
 	Hierarchical_coder hc(infile, T, K, symmax);
 	hc.run();

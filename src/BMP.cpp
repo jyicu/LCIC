@@ -69,18 +69,18 @@ void bmpRead_1c(char filename[], int ***data) {
 	FILE *f;
 	fopen_s(&f, filename, "rb");
 
-	unsigned char* header = new unsigned char[54];
+	unsigned short* header = new unsigned short[54];
 
-	fread(header, sizeof(unsigned char), 54, f);
+	fread(header, sizeof(unsigned short), 54, f);
 
 	int w = *(int*)&header[18];
 	int h = *(int*)&header[22];
 
-	unsigned char *img = new unsigned char[w*h];
+	unsigned short *img = new unsigned short[w*h];
 	memset(img, 0, w*h);
 
 	// Read in 2 dummy lines
-	fread(img, 1, 2*w, f);
+	fread(img, 2, 2*w, f);
 
 	for (int i = 0; i < h; i++)
 	{
