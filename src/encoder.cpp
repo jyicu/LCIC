@@ -598,14 +598,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 
 	//coder
 	float proportion = float(x_h_counter) / numPix;
-	printf("freq of selecting H prediction : %f\n", proportion);
-	cv::Mat aa(height, width, CV_8UC1);
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			aa.at<unsigned char>(i, j) = (unsigned)(eitherHOR(j, i)&Dir[i][j]);
-		}
-	}
-	cv::imwrite("idx.bmp", aa);
+	//printf("freq of selecting H prediction : %f\n", proportion);
 
 	return 0;
 }
