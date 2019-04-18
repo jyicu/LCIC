@@ -417,11 +417,101 @@ void Encoder::context_modeling() {
 	int * temp = new int[N];
 	int interval = N / K;
 
+	bool print = false;
+
 	std::copy(sigma[0], sigma[0] + N, temp);
 	std::sort(temp, temp + N);
 
 	for (int i = 0; i < K - 1; i++) {
 		q[i] = temp[(i + 1) * interval];
+	}
+
+	int max = temp[N - 1];
+
+	int *ctx_cnt = new int[max];
+
+	for (int i = 0; i < max + 1; i++) {
+
+		ctx_cnt[i] = 0;
+
+		for (int j = 0; j < N; j++) {
+			if (temp[j] == i)
+				ctx_cnt[i]++;
+		}
+	}
+
+	int sum;
+	int right_sum, left_sum;
+	int j;
+	int start_idx;
+
+	for (int i = 0; i < K - 1; i++) {
+
+		if (i == 0)
+			start_idx = 0;
+		else
+			start_idx = q[i - 1] + 1;
+
+		sum = 0;
+
+		for (j = start_idx; j < max; j++) {
+
+			sum += ctx_cnt[j];
+
+			if (sum > interval)
+				break;
+		}
+
+		right_sum = sum;
+		left_sum = sum - ctx_cnt[j];
+
+		if (j == 0) {
+			q[i] = 0;
+		}
+		else {
+			if (ABS(right_sum - interval) > ABS(left_sum - interval))
+				q[i] = j - 1;
+			else
+				q[i] = j;
+		}
+	}
+
+	if (print) {
+		printf("Interval %d\n", interval);
+
+		for (int i = 0; i < K - 1; i++) {
+			printf("q : %d\n", i, q[i]);
+		}
+
+		for (int i = 0; i < max + 1; i++) {
+			printf("ctx %d : %d\n", i, ctx_cnt[i]);
+		}
+
+		for (int i = 0; i < K - 1; i++) {
+			printf("%d ", q[i]);
+		}
+
+		printf("\n");
+
+		for (int i = 0; i < K - 1; i++) {
+
+			int cnt = 0;
+
+			if (i == 0) {
+				for (int j = 0; j < q[i] + 1; j++) {
+					cnt += ctx_cnt[j];
+				}
+
+				printf("Num q[%d] : %d\n", i, cnt);
+			}
+			else {
+				for (int j = q[i - 1] + 1; j < q[i] + 1; j++) {
+					cnt += ctx_cnt[j];
+				}
+
+				printf("Num q[%d] : %d\n", i, cnt);
+			}
+		}
 	}
 
 	delete[] temp;
@@ -653,11 +743,101 @@ void Decoder::context_modeling() {
 	int * temp = new int[N];
 	int interval = N / K;
 
+	bool print = false;
+
 	std::copy(sigma[0], sigma[0] + N, temp);
 	std::sort(temp, temp + N);
 
 	for (int i = 0; i < K - 1; i++) {
 		q[i] = temp[(i + 1) * interval];
+	}
+
+	int max = temp[N - 1];
+
+	int *ctx_cnt = new int[max];
+
+	for (int i = 0; i < max + 1; i++) {
+
+		ctx_cnt[i] = 0;
+
+		for (int j = 0; j < N; j++) {
+			if (temp[j] == i)
+				ctx_cnt[i]++;
+		}
+	}
+
+	int sum;
+	int right_sum, left_sum;
+	int j;
+	int start_idx;
+
+	for (int i = 0; i < K - 1; i++) {
+
+		if (i == 0)
+			start_idx = 0;
+		else
+			start_idx = q[i - 1] + 1;
+
+		sum = 0;
+
+		for (j = start_idx; j < max; j++) {
+
+			sum += ctx_cnt[j];
+
+			if (sum > interval)
+				break;
+		}
+
+		right_sum = sum;
+		left_sum = sum - ctx_cnt[j];
+
+		if (j == 0) {
+			q[i] = 0;
+		}
+		else {
+			if (ABS(right_sum - interval) > ABS(left_sum - interval))
+				q[i] = j - 1;
+			else
+				q[i] = j;
+		}
+	}
+
+	if (print) {
+		printf("Interval %d\n", interval);
+
+		for (int i = 0; i < K - 1; i++) {
+			printf("q : %d\n", i, q[i]);
+		}
+
+		for (int i = 0; i < max + 1; i++) {
+			printf("ctx %d : %d\n", i, ctx_cnt[i]);
+		}
+
+		for (int i = 0; i < K - 1; i++) {
+			printf("%d ", q[i]);
+		}
+
+		printf("\n");
+
+		for (int i = 0; i < K - 1; i++) {
+
+			int cnt = 0;
+
+			if (i == 0) {
+				for (int j = 0; j < q[i] + 1; j++) {
+					cnt += ctx_cnt[j];
+				}
+
+				printf("Num q[%d] : %d\n", i, cnt);
+			}
+			else {
+				for (int j = q[i - 1] + 1; j < q[i] + 1; j++) {
+					cnt += ctx_cnt[j];
+				}
+
+				printf("Num q[%d] : %d\n", i, cnt);
+			}
+		}
 	}
 
 	delete[] temp;

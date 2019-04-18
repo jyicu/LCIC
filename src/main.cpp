@@ -24,7 +24,6 @@ typedef unsigned char UINT8;
 #define ROUND(x)	((int)((x)+0.5))
 #define UINT8(x)	CLIP255(ROUND(x))
 
-
 int test_Kodak(int T, int K, int SymMax) {
 	int num_files = 24;
 	float bpp = 0;
@@ -43,8 +42,79 @@ int test_Kodak(int T, int K, int SymMax) {
 	return 0;
 }
 
+int test_medical(int T, int K, int SymMax) {
+
+	int num_files = 7;
+	float bpp = 0;
+
+	Hierarchical_coder coder1("./medical/[0]pet1.bmp", T, K, SymMax);
+	bpp += coder1.run();
+
+	Hierarchical_coder coder2("./medical/[0]pet2.bmp", T, K, SymMax);
+	bpp += coder2.run();
+
+	Hierarchical_coder coder3("./medical/[0]pet3.bmp", T, K, SymMax);
+	bpp += coder3.run();
+
+	Hierarchical_coder coder4("./medical/[1]eye1.bmp", T, K, SymMax);
+	bpp += coder4.run();
+
+	Hierarchical_coder coder5("./medical/[1]eye2.bmp", T, K, SymMax);
+	bpp += coder5.run();
+
+	Hierarchical_coder coder6("./medical/[2]eyeground.bmp", T, K, SymMax);
+	bpp += coder6.run();
+
+	/*Hierarchical_coder coder7("./medical/endoscope1.bmp", T, K, SymMax);
+	bpp += coder7.run();*/
+
+	Hierarchical_coder coder8("./medical/endoscope2.bmp", T, K, SymMax);
+	bpp += coder8.run();
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+
+	return 0;
+}
+
+int test_digital_cam(int T, int K, int SymMax) {
+	int num_files = 8;
+	float bpp = 0;
+
+	Hierarchical_coder coder1("./digital_cam/berry.bmp", T, K, SymMax);
+	bpp += coder1.run();
+
+	Hierarchical_coder coder2("./digital_cam/ceiling.bmp", T, K, SymMax);
+	bpp += coder2.run();
+
+	Hierarchical_coder coder3("./digital_cam/fireworks.bmp", T, K, SymMax);
+	bpp += coder3.run();
+
+	Hierarchical_coder coder4("./digital_cam/flamingo.bmp", T, K, SymMax);
+	bpp += coder4.run();
+
+	Hierarchical_coder coder5("./digital_cam/flower.bmp", T, K, SymMax);
+	bpp += coder5.run();
+
+	Hierarchical_coder coder6("./digital_cam/locks.bmp", T, K, SymMax);
+	bpp += coder6.run();
+
+	Hierarchical_coder coder7("./digital_cam/park.bmp", T, K, SymMax);
+	bpp += coder7.run();
+
+	Hierarchical_coder coder8("./digital_cam/sunset.bmp", T, K, SymMax);
+	bpp += coder8.run();
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+
+	return 0;
+}
+
 float run_jasper(char* filename, char* filename_jpc) {
-	
+
 	int **R, **G, **B;
 	int height, width;
 
@@ -65,7 +135,6 @@ float run_jasper(char* filename, char* filename_jpc) {
 
 	return bpp;
 }
-
 
 int test_kodak_jasper() {
 
@@ -101,7 +170,7 @@ int test_kodak_jasper() {
 void main(int argc, char *argv[]) {
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "lena.bmp";
+	char infile[] = "pepper.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
@@ -110,7 +179,9 @@ void main(int argc, char *argv[]) {
 	int K = 6;
 	int symmax = 40;
 
-	test_Kodak(T,K,symmax);
+	//test_Kodak(T,K,symmax);
+	//test_medical(T, K, symmax);
+	//test_digital_cam(T, K, symmax);
 	//test_kodak_jasper();
 	//run_jasper(infile, "result/mandrill.jpc");
 	//check_result();
