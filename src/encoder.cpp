@@ -538,22 +538,6 @@ void Encoder::encodeMag(unsigned int sym, Arithmetic_Codec *pCoder, Adaptive_Dat
 	
 	else 
 		pCoder->encode(sym, *pDm);
-	//if (sym < symMax) {
-	//	pCoder->encode(sym, *pDm);
-	//}
-	//else if (sym < 64) {
-	//	pCoder->encode(symMax, *pDm);
-	//	pCoder->put_bits((sym - 40), 5);
-	//}
-	//else if (sym < 128) {
-	//	pCoder->encode(symMax + 1, *pDm);
-	//	pCoder->put_bits((sym - 64), 6);
-	//}
-	//else {
-	//	pCoder->encode(symMax + 2, *pDm);
-	//	pCoder->put_bits((sym - 128), 7);
-	//}
-	
 }
 
 bool Encoder::eitherHOR(int x, int y) {

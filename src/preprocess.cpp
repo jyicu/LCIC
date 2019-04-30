@@ -115,9 +115,10 @@ void RGB2YUV(int ***R, int ***G, int ***B, int ***Y, int ***U, int ***V, int *he
 			g = (*G)[y][x];
 			b = (*B)[y][x];
 
-			(*Y)[y][x] = (r + 2 * g + b) >> 2;
-			(*U)[y][x] = r - g;
-			(*V)[y][x] = b - g;
+			(*U)[y][x] = b - (int)round((87*r + 169*g)/256);
+			(*V)[y][x] = r - g;
+			(*Y)[y][x] = g + (int)round((86*(*V)[y][x] + 29*(*U)[y][x])/256);
+
 		}
 	}
 }
@@ -147,9 +148,9 @@ void YUV2RGB(int ***Y, int ***U, int ***V, int ***R, int ***G, int ***B, int *he
 			u = (*U)[y][x];
 			v = (*V)[y][x];
 
-			(*G)[y][x] = y_ - int(floor((float)(u + v) / 4));
-			(*R)[y][x] = u + (*G)[y][x];
-			(*B)[y][x] = v + (*G)[y][x];
+			(*G)[y][x] = y_ - (int)round((86*v+29*u)/256);
+			(*R)[y][x] = v + (*G)[y][x];
+			(*B)[y][x] = u + (int)round((87*(*R)[y][x]+169*(*G)[y][x])/256);
 		}
 	}
 }
