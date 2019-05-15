@@ -13,7 +13,7 @@
 #include "acfile/arithmetic_codec.h"
 
 
-#define NUM_CTX 6
+#define NUM_CTX 6*3
 #define HOR 1
 #define VER 0
 #define FIXED_BITS 10
@@ -214,7 +214,7 @@ int Hierarchical_coder::encode_params(FILE *fp) {
 
 void Hierarchical_coder::initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm) {
 
-	for (int i = 0; i < K; i++) {
+	for (int i = 0; i < 3*K; i++) {
 		pDm[i].set_alphabet(symMax + 1);
 		pDm[i].set_distribution(0.9);
 	}
@@ -356,7 +356,7 @@ int Hierarchical_decoder::decode_params(FILE *fp) {
 
 void Hierarchical_decoder::initCoder(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 
-	for (int i = 0; i < K; i++) {
+	for (int i = 0; i < 3 * K; i++) {
 		pDm[i].set_alphabet(symMax + 1);
 		pDm[i].set_distribution(0.9);
 	}
@@ -568,7 +568,7 @@ bool Encoder::eitherHOR(int x, int y) {
 
 void Encoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
 
-	for (int i = 0; i < K; i++) {
+	for (int i = 0; i < 3*K; i++) {
 		pDm[i].set_alphabet(symMax + 1);
 		pDm[i].set_distribution(0.9);
 	}
@@ -581,7 +581,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 
 	// Counter Initialize
 	int Dir_counter[2] = { 0 };
-	int sym_counter[512] = { 0 };
+	int sym_counter[NUM_CTX][512] = { 0 };
 	int context_counter[NUM_CTX] = { 0 };
 	int x_h_counter = 0;
 	int numPix = 0;
@@ -589,7 +589,9 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 	// Encoding variables
 	int y, x;
 	int x_o, x_h, x_v;
+	float x_vf;
 	int pred, res, ctx;
+	int ctx_res; // x_v.0 = 0, x_v.5 = 1, x_h = 2 
 	unsigned int sym;
 
 	// Data model for dir encoding
@@ -603,7 +605,9 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 		x = 0;
 
 		x_o = X_o[y][x];
-		x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+		x_vf = 0.5*(X_e[y][x] + X_e[y + 1][x]);
+		x_v = ROUND(x_vf);
+		ctx_res = ((x_vf - x_v) == 0) ? 0 : 1;
 
 		// Set First pixel direction as vertical
 		Dir[y][x] = VER;
@@ -612,13 +616,13 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 		// Encode
 		res = x_o - pred;
 		sym = MAP(res);
-		ctx = context(x, y);
+		ctx = 3 * context(x, y) + ctx_res;
 
 		encodeMag(sym, pCoder, &pDm[ctx]);
 
 		// Counter
 		Dir_counter[Dir[y][x]]++;
-		sym_counter[sym]++;
+		sym_counter[ctx][sym]++;
 		context_counter[ctx]++;
 
 		numPix++;
@@ -636,7 +640,16 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 			//  HOR/VER pixel prediction //
 			//===========================//
 			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
-			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+			
+			if (y == height - 1) {
+				x_v = X_e[y][x];
+				ctx_res = 0;
+			}
+			else {
+				x_vf = 0.5*(X_e[y][x] + X_e[y + 1][x]);
+				x_v = ROUND(x_vf);
+				ctx_res = ((x_vf - x_v) == 0) ? 0 : 1;
+			}
 
 			//===========================//
 			//     Encode Direction      //
@@ -645,9 +658,15 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 
 			if (eitherHOR(x, y)) {
 				pCoder->encode(Dir[y][x], dir_dm);
-				pred = (Dir[y][x] == HOR) ? x_h : x_v;
-				if (Dir[y][x] == HOR)
+				if (Dir[y][x] == HOR) {
+					pred = x_h;
+					ctx_res = 2;
 					x_h_counter++;
+				}
+				else {
+					pred = x_v;
+				}
+					
 			}
 			else
 				pred = x_v;
@@ -657,12 +676,12 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 			//===========================//
 			res = x_o - pred;
 			sym = MAP(res);
-			ctx = context(x, y);
+			ctx = 3*context(x, y) + ctx_res;
 
 			encodeMag(sym, pCoder, &pDm[ctx]);
 
 			Dir_counter[Dir[y][x]]++;
-			sym_counter[sym]++;
+			sym_counter[ctx][sym]++;
 			context_counter[ctx]++;
 
 			numPix++;
@@ -839,7 +858,7 @@ int Decoder::context(int x, int y) {
 
 void Decoder::initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, FILE *fp) {
 
-	for (int i = 0; i < K; i++) {
+	for (int i = 0; i < 3 * K; i++) {
 		pDm[i].set_alphabet(symMax + 1);
 		pDm[i].set_distribution(0.9);
 	}
@@ -894,7 +913,9 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 	// Encoding variables
 	int y, x;
 	int x_o, x_h, x_v;
+	float x_vf;
 	int pred, res, ctx;
+	int ctx_res;
 	unsigned int sym;
 	int dir_;
 
@@ -910,11 +931,13 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 
 		Dir[y][x] = VER;
 
-		x_v = ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+		x_vf = 0.5*(X_e[y][x] + X_e[y + 1][x]);
+		x_v = ROUND(x_vf);
+		ctx_res = ((x_vf - x_v) == 0) ? 0 : 1;
 
 		pred = x_v;
 
-		ctx = context(x, y);
+		ctx = 3 * context(x, y) + ctx_res;
 		sym = decodemag(pCoder, &pDm[ctx]);
 		res = UNMAP(sym);
 		x_o = res + pred;
@@ -928,17 +951,30 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 				continue;
 
 			x_h = (x == 0) ? X_o[y - 1][x] : X_o[y][x - 1];
-			x_v = (y == height - 1) ? X_e[y][x] : ROUND(0.5*(X_e[y][x] + X_e[y + 1][x]));
+			if (y == height - 1) {
+				x_v = X_e[y][x];
+				ctx_res = 0;
+			}
+			else {
+				x_vf = 0.5*(X_e[y][x] + X_e[y + 1][x]);
+				x_v = ROUND(x_vf);
+				ctx_res = ((x_vf - x_v) == 0) ? 0 : 1;
+			}
 
 			if (eitherHOR(x, y)) {
 				dir_ = pCoder->decode(dir_dm);
-				pred = (dir_ == HOR) ? x_h : x_v;
+				if (dir_ == HOR) {
+					pred = x_h;
+					ctx_res = 2;
+				}
+				else
+					pred = x_v;
 			}
 			else {
 				pred = x_v;
 			}
 
-			ctx = context(x, y);
+			ctx = 3 * context(x, y) + ctx_res;
 			sym = decodemag(pCoder, &pDm[ctx]);
 			res = UNMAP(sym);
 			x_o = res + pred;
