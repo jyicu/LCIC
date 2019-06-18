@@ -51,6 +51,10 @@ int MAP(int X, int pred) {
 	else
 		sym = -X - 1;
 	sym = sym >= 0 ? 2 * sym : -2 * sym - 1;
+	int sym2 = (X-pred) >= 0 ? 2 * (X - pred) : -2 * (X - pred) - 1;
+	if ((sym != sym2) || (sym < 0)) {
+		printf("e");
+	}
 	return sym;
 }
 
