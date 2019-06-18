@@ -40,6 +40,39 @@ inline bool dir(int x_o, int T, int x_v, int x_h) {
 	return ((ABS(x_o - x_v)) > (ABS(x_o - x_h) + T) ? (HOR) : (VER));
 }
 
+int MAP(int X, int pred) {
+	int sym;
+	if (pred < 0) {
+		X = -X - 1;
+		pred = -pred - 1;
+	}
+	if ((X - pred) >= -256)
+		sym = X - pred;
+	else
+		sym = -X - 1;
+	sym = sym >= 0 ? 2 * sym : -2 * sym - 1;
+	return sym;
+}
+
+int UNMAP(int sym, int pred) {
+	int x;
+	sym = (sym % 2 == 0) ? sym / 2 : (sym + 1) / 2 * (-1);
+	bool inv = 0;
+	if (pred < 0) {
+		pred = -pred - 1;
+		inv = 1;
+	}
+		
+	if ((pred + sym) < 256)
+		x = pred +sym;
+	else
+		x = -sym - 1;
+	if (inv)
+		x = -x - 1;
+
+	return x;
+}
+
 Encoder::Encoder(int ** _X_o, int ** _X_e, int _T, int _K, int* symMax_, int _height, int _width) {
 
 	X_o = _X_o;
@@ -288,8 +321,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 		pred = x_v;
 
 		// Encode
-		res = x_o - pred;
-		sym = MAP(res);
+		sym = MAP(x_o,pred);
 		ctx = 3 * context(x, y) + ctx_res;
 
 		encodeMag(sym, ctx, pCoder, &pDm[ctx]);
@@ -348,8 +380,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 			//===========================//
 			//      Encode Symbol        //
 			//===========================//
-			res = x_o - pred;
-			sym = MAP(res);
+			sym = MAP(x_o,pred);
 			ctx = 3*context(x, y) + ctx_res;
 
 			encodeMag(sym, ctx, pCoder, &pDm[ctx]);
@@ -613,8 +644,7 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 
 		ctx = 3 * context(x, y) + ctx_res;
 		sym = decodemag(ctx, pCoder, &pDm[ctx]);
-		res = UNMAP(sym);
-		x_o = res + pred;
+		x_o = UNMAP(sym,pred);
 		X_o[y][x] = x_o;
 	}
 
@@ -650,8 +680,7 @@ int ** Decoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp
 
 			ctx = 3 * context(x, y) + ctx_res;
 			sym = decodemag(ctx, pCoder, &pDm[ctx]);
-			res = UNMAP(sym);
-			x_o = res + pred;
+			x_o = UNMAP(sym,pred);
 			Dir[y][x] = dir(x_o, T, x_v, x_h);
 			X_o[y][x] = x_o;
 		}

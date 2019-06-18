@@ -12,8 +12,8 @@
 #define CLIP255(x)	MAX(0, MIN((x), 255))
 #define ROUND(x)	((int)((x)+0.5))
 #define UINT8(x)	CLIP255(ROUND(x))
-#define MAP(res)    res >= 0 ? 2 * res : -2 * res - 1;
-#define UNMAP(sym)  (sym % 2 ==0) ? sym/2 : (sym+1)/2 * (-1);
+//#define MAP(res)    res >= 0 ? 2 * res : -2 * res - 1;
+//#define UNMAP(sym)  (sym % 2 ==0) ? sym/2 : (sym+1)/2 * (-1);
 
 #define NUM_CTX 6*3
 
