@@ -42,37 +42,56 @@ inline bool dir(int x_o, int T, int x_v, int x_h) {
 
 int MAP(int X, int pred) {
 	int sym;
+	bool inv = 0;
 	if (pred < 0) {
 		X = -X - 1;
 		pred = -pred - 1;
+		inv = 1;
 	}
-	if ((X - pred) >= -256)
-		sym = X - pred;
-	else
-		sym = -X - 1;
-	sym = sym >= 0 ? 2 * sym : -2 * sym - 1;
-	int sym2 = (X-pred) >= 0 ? 2 * (X - pred) : -2 * (X - pred) - 1;
-	if ((sym != sym2) || (sym < 0)) {
-		printf("e");
+	if (inv) {
+		if (X > pred)
+			sym = 2 * (X - pred) - 1;
+		else if (X < 2 * pred - 255)
+			sym = 255 - X;
+		else
+			sym = 2 * (pred - X);
+	}
+	else {
+		if (X >= pred)
+			sym = 2 * (X - pred);
+		else if (X < 2 * pred - 255)
+			sym = 255 - X;
+		else
+			sym = 2 * (pred - X) - 1;
 	}
 	return sym;
 }
 
 int UNMAP(int sym, int pred) {
 	int x;
-	sym = (sym % 2 == 0) ? sym / 2 : (sym + 1) / 2 * (-1);
 	bool inv = 0;
 	if (pred < 0) {
 		pred = -pred - 1;
 		inv = 1;
 	}
 		
-	if ((pred + sym) < 256)
-		x = pred +sym;
-	else
-		x = -sym - 1;
-	if (inv)
+	if (inv) {
+		if (sym > 510 - 2 * pred)
+			x = 255 - sym;
+		else if (sym % 2 == 0)
+			x = pred - sym / 2;
+		else
+			x = pred + (sym + 1) / 2;
 		x = -x - 1;
+	}
+	else {
+		if (sym > 510 - 2 * pred)
+			x = 255 - sym;
+		else if (sym % 2 == 0)
+			x = pred + sym / 2;
+		else
+			x = pred - (sym + 1) / 2;
+	}
 
 	return x;
 }
