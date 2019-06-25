@@ -155,6 +155,7 @@
     <ClCompile Include="src\cabac.cpp" />
     <ClCompile Include="src\dct.cpp" />
     <ClCompile Include="src\encoder.cpp" />
+    <ClCompile Include="src\hierarchicalcoder.cpp" />
     <ClCompile Include="src\lifting.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\pgm_io.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="src\BMP.h" />
     <ClInclude Include="src\encoder.h" />
     <ClInclude Include="src\global.h" />
+    <ClInclude Include="src\hierarchicalcoder.h" />
     <ClInclude Include="src\lifting.h" />
     <ClInclude Include="src\pgm_io.h" />
     <ClInclude Include="src\preprocess.h" />

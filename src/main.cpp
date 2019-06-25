@@ -9,6 +9,7 @@
 #include "BMP.h"
 #include "preprocess.h"
 #include "encoder.h"
+#include "hierarchicalcoder.h"
 
 #pragma warning(disable: 4996)
 
@@ -170,16 +171,16 @@ int test_kodak_jasper() {
 void main(int argc, char *argv[]) {
 
 	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "./Kodak/kodim01.bmp";
+	char infile[] = "./lena.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 	FILE *fp;
 
 	int T = 3;
 	int K = 6;
-	int symmax = 40;
+	int symmax = 20;
 
-	//test_Kodak(T,K,symmax);
+	test_Kodak(T,K,symmax);
 	//test_medical(T, K, symmax);
 	//test_digital_cam(T, K, symmax);
 	//test_kodak_jasper();
