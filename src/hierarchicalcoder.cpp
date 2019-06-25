@@ -224,11 +224,11 @@ Hierarchical_decoder::Hierarchical_decoder() {
 			p[i] = 0.6;
 		}
 		else if (i < 12) {
-			symMaxes[i] = 20;
+			symMaxes[i] = 12;
 			p[i] = 0.7;
 		}
 		else {
-			symMaxes[i] = 30;
+			symMaxes[i] = 40;
 			p[i] = 0.9;
 		}
 		}
