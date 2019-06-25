@@ -220,15 +220,15 @@ Hierarchical_decoder::Hierarchical_decoder() {
 	for (int i = 0; i < NUM_CTX; i++) 
 	{
 		if (i < 6) {
-			symMaxes[i] = 8;
+			symMaxes[i] = 10;
 			p[i] = 0.6;
 		}
 		else if (i < 12) {
-			symMaxes[i] = 12;
+			symMaxes[i] = 20;
 			p[i] = 0.7;
 		}
 		else {
-			symMaxes[i] = 40;
+			symMaxes[i] = 30;
 			p[i] = 0.9;
 		}
 		}
