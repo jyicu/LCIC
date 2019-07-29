@@ -79,8 +79,6 @@ void bmpRead_1c(char filename[], int ***data) {
 	unsigned char *img = new unsigned char[3 * w * h];
 	memset(img, 0, w*h);
 
-	int row_padded = w % 4;
-
 	fread(img, 2, w+3, f);
 
 	for (int i = 0; i < h; i++)
@@ -96,9 +94,6 @@ void bmpRead_1c(char filename[], int ***data) {
 
 	int idx;
 
-
-	printf("Row padded : %d\n", row_padded);
-
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 
@@ -106,53 +101,8 @@ void bmpRead_1c(char filename[], int ***data) {
 
 			(*data)[y][x] = img[idx];
 
-			//printf("(%d, %d) : %d\n", y, x, img[idx]);
 		}
 	}
-
-	//int w_pad = (w + 3) & (~3);
-
-	//unsigned char *img = new unsigned char[w * h];
-	//memset(img, 0, w*h);
-
-	//fread(img, 2, w, f);
-
-	//for (int i = 0; i < h; i++)
-	//{
-	//	fread(img + w * i, sizeof(unsigned char), w, f);
-
-	//	for (int j = 0; j < (4 - (w * 3) % 4) % 4; j++)
-	//		fgetc(f);
-	//}
-
-	//*data = alloc2D(h, w);
-
-	//int idx;
-
-	//for (int y = 0; y < h; y++) {
-	//	for (int x = 0; x < w; x++) {
-
-	//		idx = (x + (h - y - 1)*w);
-
-	//		(*data)[y][x] = img[idx];
-	//	}
-	//}
-
-	//int row_padded = (w + 3) & (~3);
-	//int idx;
-
-	//unsigned char* data_row = new unsigned char[row_padded];
-	//*data = alloc2D(h, w);
-
-	//for (int y = 0; y < h; y++) {
-	//	fread(data_row, sizeof(unsigned char), row_padded, f);
-	//	for (int x = 0; x < w; x++) {
-	//		
-	//		//idx = x + (h - y - 1)*w;
-
-	//		(*data)[h-y-1][x] = data_row[x + row_padded - w];
-	//	}
-	//}
 
 	delete(img);
 	fclose(f);
