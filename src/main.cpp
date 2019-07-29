@@ -25,91 +25,126 @@ typedef unsigned char UINT8;
 #define ROUND(x)	((int)((x)+0.5))
 #define UINT8(x)	CLIP255(ROUND(x))
 
-int test_Kodak(int T, int K, int SymMax) {
+int test_Kodak(int T, int K) {
 	int num_files = 24;
 	float bpp = 0;
 
 	for (int i = 0; i < num_files; i++) {
 		char filename[20];
 		sprintf(filename, "./Kodak/kodim%02d.bmp", i + 1);
-		Hierarchical_coder coder(filename, T, K, SymMax);
+		Hierarchical_coder coder(filename, T, K);
 		bpp += coder.run();
 	}
 
 	float avg_bpp = bpp / float(num_files);
 
+	std::cout << "================ Kodak ================" << std::endl;
+	printf("(%d, %d)", T, K);
 	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Kodak ================" << std::endl;
 
 	return 0;
 }
 
-int test_medical(int T, int K, int SymMax) {
-
-	int num_files = 7;
+int test_classic(int T, int K) {
+	int num_files = 4;
 	float bpp = 0;
 
-	Hierarchical_coder coder1("./medical/[0]pet1.bmp", T, K, SymMax);
+	Hierarchical_coder coder1("./classic/lena.bmp", T, K);
 	bpp += coder1.run();
 
-	Hierarchical_coder coder2("./medical/[0]pet2.bmp", T, K, SymMax);
+	Hierarchical_coder coder2("./classic/peppers.bmp", T, K);
 	bpp += coder2.run();
 
-	Hierarchical_coder coder3("./medical/[0]pet3.bmp", T, K, SymMax);
+	Hierarchical_coder coder3("./classic/mandrill.bmp", T, K);
 	bpp += coder3.run();
 
-	Hierarchical_coder coder4("./medical/[1]eye1.bmp", T, K, SymMax);
+	Hierarchical_coder coder4("./classic/barbara.bmp", T, K);
 	bpp += coder4.run();
-
-	Hierarchical_coder coder5("./medical/[1]eye2.bmp", T, K, SymMax);
-	bpp += coder5.run();
-
-	Hierarchical_coder coder6("./medical/[2]eyeground.bmp", T, K, SymMax);
-	bpp += coder6.run();
-
-	/*Hierarchical_coder coder7("./medical/endoscope1.bmp", T, K, SymMax);
-	bpp += coder7.run();*/
-
-	Hierarchical_coder coder8("./medical/endoscope2.bmp", T, K, SymMax);
-	bpp += coder8.run();
 
 	float avg_bpp = bpp / float(num_files);
 
+	std::cout << "================ Classic ================" << std::endl;
+	printf("(%d, %d)", T, K);
 	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Classic ================" << std::endl;
 
 	return 0;
 }
 
-int test_digital_cam(int T, int K, int SymMax) {
+int test_medical(int T, int K) {
+
 	int num_files = 8;
 	float bpp = 0;
 
-	Hierarchical_coder coder1("./digital_cam/berry.bmp", T, K, SymMax);
+	Hierarchical_coder coder1("./medical/[0]pet1.bmp", T, K);
 	bpp += coder1.run();
 
-	Hierarchical_coder coder2("./digital_cam/ceiling.bmp", T, K, SymMax);
+	Hierarchical_coder coder2("./medical/[0]pet2.bmp", T, K);
 	bpp += coder2.run();
 
-	Hierarchical_coder coder3("./digital_cam/fireworks.bmp", T, K, SymMax);
+	Hierarchical_coder coder3("./medical/[0]pet3.bmp", T, K);
 	bpp += coder3.run();
 
-	Hierarchical_coder coder4("./digital_cam/flamingo.bmp", T, K, SymMax);
+	Hierarchical_coder coder4("./medical/[1]eye1.bmp", T, K);
 	bpp += coder4.run();
 
-	Hierarchical_coder coder5("./digital_cam/flower.bmp", T, K, SymMax);
+	Hierarchical_coder coder5("./medical/[1]eye2.bmp", T, K);
 	bpp += coder5.run();
 
-	Hierarchical_coder coder6("./digital_cam/locks.bmp", T, K, SymMax);
+	Hierarchical_coder coder6("./medical/[2]eyeground.bmp", T, K);
 	bpp += coder6.run();
 
-	Hierarchical_coder coder7("./digital_cam/park.bmp", T, K, SymMax);
+	Hierarchical_coder coder7("./medical/endoscope1.bmp", T, K);
 	bpp += coder7.run();
 
-	Hierarchical_coder coder8("./digital_cam/sunset.bmp", T, K, SymMax);
+	Hierarchical_coder coder8("./medical/endoscope2.bmp", T, K);
 	bpp += coder8.run();
 
 	float avg_bpp = bpp / float(num_files);
 
+	std::cout << "================ Medical ================" << std::endl;
+	printf("(%d, %d)", T, K);
 	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Medical ================" << std::endl;
+
+	return 0;
+}
+
+int test_digital_cam(int T, int K) {
+	int num_files = 8;
+	float bpp = 0;
+
+	Hierarchical_coder coder1("./digital_cam/berry.bmp", T, K);
+	bpp += coder1.run();
+
+	Hierarchical_coder coder2("./digital_cam/ceiling.bmp", T, K);
+	bpp += coder2.run();
+
+	Hierarchical_coder coder3("./digital_cam/fireworks.bmp", T, K);
+	bpp += coder3.run();
+
+	Hierarchical_coder coder4("./digital_cam/flamingo.bmp", T, K);
+	bpp += coder4.run();
+
+	Hierarchical_coder coder5("./digital_cam/flower.bmp", T, K);
+	bpp += coder5.run();
+
+	Hierarchical_coder coder6("./digital_cam/locks.bmp", T, K);
+	bpp += coder6.run();
+
+	Hierarchical_coder coder7("./digital_cam/park.bmp", T, K);
+	bpp += coder7.run();
+
+	Hierarchical_coder coder8("./digital_cam/sunset.bmp", T, K);
+	bpp += coder8.run();
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "================ Digital Cam ================" << std::endl;
+	printf("(%d, %d)", T, K);
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Digital Cam ================" << std::endl;
 
 	return 0;
 }
@@ -170,23 +205,22 @@ int test_kodak_jasper() {
 
 void main(int argc, char *argv[]) {
 
-	//char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char infile[] = "./lena.bmp";
-	char outfile[] = "lev2.bmp";
-	char codefile[] = "code.bin";
-	FILE *fp;
+	char infile[] = "./classic/lena.bmp";
 
 	int T = 3;
 	int K = 6;
-	int symmax = 20;
 
-	test_Kodak(T,K,symmax);
-	//test_medical(T, K, symmax);
-	//test_digital_cam(T, K, symmax);
+
+	//test_Kodak(T,K);
+	//test_medical(T, K);
+	//test_classic(T, K);;
+	//test_digital_cam(T, K);
+
 	//test_kodak_jasper();
 	//run_jasper(infile, "result/mandrill.jpc");
 	//check_result();
-	Hierarchical_coder hc(infile, T, K, symmax);
+
+	Hierarchical_coder hc(infile, T, K);
 	hc.run();
 
 	Hierarchical_decoder hd;
@@ -194,19 +228,3 @@ void main(int argc, char *argv[]) {
 	
 	return;
 }
-
-
-/* TODO
-YUV로 변환해서 decomposition
-last col, first/last row 처리
-계산 최적화
-16bit version
-res->sym 최적화
-heavy-tail pdf
-context 최적화 -> 2차원?
-
-medical image는 흑백적 위주 -> 이걸 context로?
-의료영상에 적합한 트랜스폼 찾기 (G+R/2, R-G, B)?
-
-큰 파일 처리
-*/

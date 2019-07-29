@@ -37,7 +37,7 @@ void bmpRead(char filename[], int ***red, int ***green, int ***blue, int *height
 
 	for (int i = 0; i < h; i++)
 	{
-		fread(img + w*i*3, 3, w, f);
+		fread(img + w * i * 3, 3, w, f);
 
 		for (int j = 0; j<(4 - (w * 3) % 4) % 4; j++) 
 			fgetc(f);
@@ -69,45 +69,94 @@ void bmpRead_1c(char filename[], int ***data) {
 	FILE *f;
 	fopen_s(&f, filename, "rb");
 
-	unsigned short* header = new unsigned short[54];
+	unsigned char* header = new unsigned char[54];
 
-	fread(header, sizeof(unsigned short), 54, f);
+	fread(header, sizeof(unsigned char), 54, f);
 
 	int w = *(int*)&header[18];
 	int h = *(int*)&header[22];
 
-	unsigned short *img = new unsigned short[w*h];
+	unsigned char *img = new unsigned char[3 * w * h];
 	memset(img, 0, w*h);
 
-	// Read in 2 dummy lines
-	fread(img, 2, 2*w, f);
+	int row_padded = w % 4;
+
+	fread(img, 2, w+3, f);
 
 	for (int i = 0; i < h; i++)
 	{
-		fread(img + w * i, 1, w, f);
+		fread(img + w * i * 3, 3, w, f);
 
-		for (int j = 0; j<(4 - (w * 3) % 4) % 4; j++)
+		for (int j = 0; j < (4 - (w * 3) % 4) % 4; j++) {
 			fgetc(f);
+		}
 	}
 
 	*data = alloc2D(h, w);
 
 	int idx;
-	int value;
+
+
+	printf("Row padded : %d\n", row_padded);
 
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 
 			idx = (x + (h - y - 1)*w);
 
-			value = img[idx];
-
 			(*data)[y][x] = img[idx];
+
+			//printf("(%d, %d) : %d\n", y, x, img[idx]);
 		}
 	}
 
+	//int w_pad = (w + 3) & (~3);
+
+	//unsigned char *img = new unsigned char[w * h];
+	//memset(img, 0, w*h);
+
+	//fread(img, 2, w, f);
+
+	//for (int i = 0; i < h; i++)
+	//{
+	//	fread(img + w * i, sizeof(unsigned char), w, f);
+
+	//	for (int j = 0; j < (4 - (w * 3) % 4) % 4; j++)
+	//		fgetc(f);
+	//}
+
+	//*data = alloc2D(h, w);
+
+	//int idx;
+
+	//for (int y = 0; y < h; y++) {
+	//	for (int x = 0; x < w; x++) {
+
+	//		idx = (x + (h - y - 1)*w);
+
+	//		(*data)[y][x] = img[idx];
+	//	}
+	//}
+
+	//int row_padded = (w + 3) & (~3);
+	//int idx;
+
+	//unsigned char* data_row = new unsigned char[row_padded];
+	//*data = alloc2D(h, w);
+
+	//for (int y = 0; y < h; y++) {
+	//	fread(data_row, sizeof(unsigned char), row_padded, f);
+	//	for (int x = 0; x < w; x++) {
+	//		
+	//		//idx = x + (h - y - 1)*w;
+
+	//		(*data)[h-y-1][x] = data_row[x + row_padded - w];
+	//	}
+	//}
+
 	delete(img);
 	fclose(f);
+
 }
 
 

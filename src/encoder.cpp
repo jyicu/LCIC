@@ -43,11 +43,13 @@ inline bool dir(int x_o, int T, int x_v, int x_h) {
 int MAP(int X, int pred) {
 	int sym;
 	bool inv = 0;
+
 	if (pred < 0) {
 		X = -X - 1;
 		pred = -pred - 1;
 		inv = 1;
 	}
+
 	if (inv) {
 		if (X > pred)
 			sym = 2 * (X - pred) - 1;
@@ -147,8 +149,6 @@ void Encoder::context_modeling() {
 	int * temp = new int[N];
 	int interval = N / K;
 
-	bool print = false;
-
 	std::copy(sigma[0], sigma[0] + N, temp);
 	std::sort(temp, temp + N);
 
@@ -203,44 +203,6 @@ void Encoder::context_modeling() {
 				q[i] = j - 1;
 			else
 				q[i] = j;
-		}
-	}
-
-	if (print) {
-		printf("Interval %d\n", interval);
-
-		for (int i = 0; i < K - 1; i++) {
-			printf("q : %d\n", i, q[i]);
-		}
-
-		for (int i = 0; i < max + 1; i++) {
-			printf("ctx %d : %d\n", i, ctx_cnt[i]);
-		}
-
-		for (int i = 0; i < K - 1; i++) {
-			printf("%d ", q[i]);
-		}
-
-		printf("\n");
-
-		for (int i = 0; i < K - 1; i++) {
-
-			int cnt = 0;
-
-			if (i == 0) {
-				for (int j = 0; j < q[i] + 1; j++) {
-					cnt += ctx_cnt[j];
-				}
-
-				printf("Num q[%d] : %d\n", i, cnt);
-			}
-			else {
-				for (int j = q[i - 1] + 1; j < q[i] + 1; j++) {
-					cnt += ctx_cnt[j];
-				}
-
-				printf("Num q[%d] : %d\n", i, cnt);
-			}
 		}
 	}
 
@@ -344,7 +306,7 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 		pred = x_v;
 
 		// Encode
-		sym = MAP(x_o,pred);
+		sym = MAP(x_o, pred);
 		ctx = 3 * context(x, y) + ctx_res;
 
 		encodeMag(sym, ctx, pCoder, &pDm[ctx]);
@@ -416,9 +378,8 @@ int Encoder::run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp) {
 		}
 	}
 
-	//coder
-	float proportion = float(x_h_counter) / numPix;
-	//printf("freq of selecting H prediction : %f\n", proportion);
+	/*float proportion = float(x_h_counter) / numPix;
+	printf("freq of selecting H prediction : %f\n", proportion);*/
 
 	return 0;
 }

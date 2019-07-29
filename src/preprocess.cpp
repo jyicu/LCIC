@@ -1,7 +1,6 @@
 #include "BMP.h"
 #include <stdio.h>
 #include <iostream>
-#include <assert.h>
 #include <math.h>
 
 #define CLOCKWISE         0
@@ -21,7 +20,11 @@
 void split_image(int ***C, int ***ODD, int ***EVEN, int *height, int *width)
 {
 	*ODD = alloc2D(*height / 2, *width);
-	*EVEN = alloc2D(*height / 2, *width);
+	
+	if (*height % 2 == 0)
+		*EVEN = alloc2D(*height / 2, *width);
+	else
+		*EVEN = alloc2D(*height / 2 + 1, *width);
 
 	for (int y = 0; y < *height; y++) {
 		for (int x = 0; x < *width; x++) {
@@ -118,7 +121,6 @@ void RGB2YUV(int ***R, int ***G, int ***B, int ***Y, int ***U, int ***V, int *he
 			(*U)[y][x] = b - (int)round((87*r + 169*g)/256.0);
 			(*V)[y][x] = r - g;
 			(*Y)[y][x] = g + (int)round((86*(*V)[y][x] + 29*(*U)[y][x])/256.0);
-
 		}
 	}
 }
@@ -170,7 +172,7 @@ void image_decomposition(int ***C, int ***ODD1, int ***ODD2, int ***EVEN1, int *
 	split_image(C, ODD1, EVEN1, height, width);
 
 	int **EVEN1_rotate;
-	int half_height = *height / 2;
+	int half_height = (*height % 2 == 0) ? *height / 2 : *height / 2 + 1;
 
 	rotate_image(EVEN1, &EVEN1_rotate, CLOCKWISE, &half_height, width);
 
@@ -197,9 +199,6 @@ void preprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***
 	int **R, **G, **B;
 
 	bmpRead(filename, &R, &G, &B, height, width);
-
-	assert(*height % 2 == 0);
-	assert(*width % 2 == 0);
 
 	// Color transform RGB into YUV image
 	int **U, **V;
@@ -234,7 +233,7 @@ None
 void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int ***U_EVEN2, int ***V_ODD1, int ***V_ODD2, int ***V_EVEN2, int *height, int *width)
 {
 	int **U_EVEN1_R, **V_EVEN1_R;
-	int half_height = *height / 2;
+	int half_height = *height % 2 == 0 ? *height / 2 : *height / 2 + 1;
 
 	concat_image(U_ODD2, U_EVEN2, &U_EVEN1_R, width, &half_height);
 	concat_image(V_ODD2, V_EVEN2, &V_EVEN1_R, width, &half_height);
@@ -271,7 +270,7 @@ void postprocess(char filename[], int ***Y, int ***U_ODD1, int ***U_ODD2, int **
 @abstract : Check if split/concat/rotate/RCT functions work well
 */
 void check_result() {
-	char infile[] = "lena.bmp";
+	char infile[] = "./classic/lena.bmp";
 	char outfile[] = "lev2.bmp";
 	char codefile[] = "code.bin";
 
@@ -279,10 +278,6 @@ void check_result() {
 	int height, width;
 
 	bmpRead(infile, &R, &G, &B, &height, &width);
-
-	assert(height % 2 == 0);
-	assert(width % 2 == 0);
-
 
 	// Split Image Check
 	int **ODD_R, **ODD_G, **ODD_B;
@@ -296,7 +291,7 @@ void check_result() {
 	char out_even[] = "result/Even.bmp";
 
 	bmpWrite(out_odd, ODD_R, ODD_G, ODD_B, height / 2, width);
-	bmpWrite(out_even, EVEN_R, EVEN_G, EVEN_B, height / 2, width);
+	bmpWrite(out_even, EVEN_R, EVEN_G, EVEN_B, height % 2 == 0 ? height / 2 : height / 2 +1, width);
 
 	// Concat Image Check
 	int **CONCAT_R, **CONCAT_G, **CONCAT_B;
@@ -354,9 +349,9 @@ void check_result() {
 	char even2_file[] = "result/Even2.bmp";
 
 	bmpWrite(odd1_file, ODD1_R, ODD1_G, ODD1_B, height / 2, width);
-	bmpWrite(odd2_file, ODD2_R, ODD2_G, ODD2_B, width / 2, height / 2);
-	bmpWrite(even1_file, EVEN1_R, EVEN1_G, EVEN1_B, height / 2, width);
-	bmpWrite(even2_file, EVEN2_R, EVEN2_G, EVEN2_B, width / 2, height / 2);
+	bmpWrite(odd2_file, ODD2_R, ODD2_G, ODD2_B, width / 2, height % 2 == 0 ? height / 2 : height / 2 + 1);
+	bmpWrite(even1_file, EVEN1_R, EVEN1_G, EVEN1_B, height % 2 == 0? height / 2 : height / 2 + 1, width);
+	bmpWrite(even2_file, EVEN2_R, EVEN2_G, EVEN2_B, width % 2 == 0 ? width / 2 : width /2 + 1, height % 2 == 0 ? height / 2 : height / 2 +1);
 
 	// Preprocess Check
 	int **Y_, **U_ODD1_, **U_ODD2_, **U_EVEN1_, **U_EVEN2_, **V_ODD1_, **V_ODD2_, **V_EVEN1_, **V_EVEN2_;
