@@ -8,8 +8,6 @@ This is an implementation of "HIERARCHICAL PREDICTION AND CONTEXT ADAPTIVE CODIN
 Usage
 =====
 
----
-
 Encode
 ------
 
