@@ -2,13 +2,15 @@
 
 class Hierarchical_coder {
 public:
-	Hierarchical_coder(char filename[], int T, int K);
+	Hierarchical_coder(char filename[], char codename[], int T, int K);
+	Hierarchical_coder(char filename[], int _T, int _K);
 	~Hierarchical_coder();
 
 	float run();
 
 private:
 	int height, width;
+	char * codefile;
 	bool print = true;
 
 	int ** Y;

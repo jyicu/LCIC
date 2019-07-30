@@ -203,13 +203,43 @@ int test_kodak_jasper() {
 	return 0;
 }
 
+void printUsage(char *s) {
+	printf("Usage: %s e [source file (bmp)] [compressed file (bin)]\n", s);
+	printf("Usage: %s d [compressed file (bin)] [decoded file (bmp)]\n", s);
+}
+
+void runEncoder(char *infile, char *codefile) {
+	int T = 3;
+	int K = 6;
+	Hierarchical_coder hc(infile, codefile, T, K);
+	hc.run();
+
+}
+
+void runDecoder(char *codefile, char *outfile) {
+	Hierarchical_decoder hd;
+	hd.run(codefile, outfile);
+}
+
 void main(int argc, char *argv[]) {
+	if (argc == 4 && argv[1][0] == 'e') {
+		runEncoder(argv[2], argv[3]);
+	}
+	else if (argc == 4 && argv[1][0] == 'd') {
+		runDecoder(argv[2], argv[3]);
+	}
+	else {
+		printUsage(argv[0]);
+	}
+}
+
+
+void test() {
 
 	char infile[] = "./classic/lena.bmp";
 
 	int T = 3;
 	int K = 6;
-
 
 	//test_Kodak(T,K);
 	//test_medical(T, K);
@@ -224,7 +254,7 @@ void main(int argc, char *argv[]) {
 	hc.run();
 
 	Hierarchical_decoder hd;
-	hd.run("code.bin", infile);
+	hd.run("code.bin", "out.bmp");
 	
 	return;
 }

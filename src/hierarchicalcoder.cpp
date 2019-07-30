@@ -80,7 +80,7 @@ int run_jasper16(int ** img, int height, int width, char* filename) {
 	return st.st_size;
 }
 
-Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K) {
+Hierarchical_coder::Hierarchical_coder(char filename[], char codename[], int _T, int _K) {
 
 	if (print) {
 		std::cout << "======== Encoder ========" << std::endl;
@@ -92,6 +92,7 @@ Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K) {
 	// Encoding variables
 	T = _T;
 	K = _K;
+	codefile = codename;
 
 	for (int i = 0; i < 3 * K; i++) {
 		if (i < 6) {
@@ -109,6 +110,10 @@ Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K) {
 	}
 
 	if(print) printf("(T, K, Height, Width) = (%d, %d, %d, %d)\n", T, K, height, width);
+}
+
+Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K) {
+	Hierarchical_coder(filename, "code.bin", _T, _K);
 }
 
 Hierarchical_coder::~Hierarchical_coder() {
@@ -156,8 +161,6 @@ float Hierarchical_coder::run() {
 	int jasper_total_bytes = 0, u_total_bytes, v_total_bytes;
 
 	// open output file
-	char codefile[] = "code.bin";
-
 	if (!(fp = fopen(codefile, "wb"))) {
 		fprintf(stderr, "Code file open error.\n");
 		exit(-1);
@@ -362,15 +365,13 @@ int Hierarchical_decoder::run(char filename[], char imagename[]) {
 	FILE *fp;
 
 	if ((fp = fopen(filename, "rb")) == NULL) {
-		fputs("error", stderr);
+		fputs("Code file open error.\n", stderr);
 		exit(1);
 	}
 
 	decode_params(fp);
 
 	// 1. Decode Y, U_e2, V_e2
-	printf("Image : %s\n", imagename);
-
 	Y    = decode_jpeg2000_8("y.jpc");
 	U_e2 = decode_jpeg2000_16("u_e2_16.jpc");
 	V_e2 = decode_jpeg2000_16("v_e2_16.jpc");
@@ -426,7 +427,7 @@ int Hierarchical_decoder::run(char filename[], char imagename[]) {
 	Decoder Vo1(V_e1, T, K, symMaxes, height / 2, width);
 	V_o1 = Vo1.run(&V_coder, V_dm, fp);
 
-	postprocess("Decoded_Result.bmp", &Y, &U_o1, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
+	postprocess(imagename, &Y, &U_o1, &U_o2, &U_e2, &V_o1, &V_o2, &V_e2, &height, &width);
 
 	fclose(fp);
 

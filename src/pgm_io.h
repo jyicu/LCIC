@@ -1,4 +1,4 @@
-
+#pragma once
 
 int readPGM(char *input_file, int *width, int *height, int *bitDepth, unsigned char ***buf);
 int readPGM_16bit(char *input_file, int *width, int *height, int *bitDepth,  unsigned short int ***buf);
