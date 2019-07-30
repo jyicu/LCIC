@@ -37,7 +37,11 @@ int run_jasper8(int ** img, int height, int width, char* filename) {
 
 	char command[128];
 	sprintf(command, "jasper.exe --input temp.pgm --output %s --output-format jpc", filename);
-	system(command);
+	int Jasper = system(command);
+	if (Jasper) {
+		fprintf(stderr, "Jasper error.\n");
+		exit(-1);
+	}
 
 	struct stat st;
 	stat(filename, &st);
@@ -70,8 +74,11 @@ int run_jasper16(int ** img, int height, int width, char* filename) {
 
 	char command[128];
 	sprintf(command, "jasper.exe --input temp.pgm --output %s --output-format jpc", filename);
-	system(command);
-
+	int Jasper = system(command);
+	if (Jasper) {
+		fprintf(stderr, "Jasper error.\n");
+		exit(-1);
+	}
 	struct stat st;
 	stat(filename, &st);
 
@@ -274,7 +281,11 @@ Hierarchical_decoder::~Hierarchical_decoder() {
 int** Hierarchical_decoder::decode_jpeg2000_8(char* filename) {
 	char command[128];
 	sprintf(command, "jasper.exe --input %s --output temp.pgm", filename);
-	system(command);
+	int Jasper = system(command);
+	if (Jasper) {
+		fprintf(stderr, "Jasper error.\n");
+		exit(-1);
+	}
 
 	unsigned char **data;
 
@@ -300,7 +311,11 @@ int** Hierarchical_decoder::decode_jpeg2000_8(char* filename) {
 int** Hierarchical_decoder::decode_jpeg2000_16(char* filename) {
 	char command[128];
 	sprintf(command, "jasper.exe --input %s --output temp.pgm", filename);
-	system(command);
+	int Jasper = system(command);
+	if (Jasper) {
+		fprintf(stderr, "Jasper error.\n");
+		exit(-1);
+	}
 
 	unsigned short int **data;
 

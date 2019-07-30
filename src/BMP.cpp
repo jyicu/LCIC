@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -24,6 +25,10 @@ void bmpRead(char filename[], int ***red, int ***green, int ***blue, int *height
 	
 	FILE *f; 
 	fopen_s(&f, filename, "rb");
+	if (f == NULL) {
+		fputs("Image file read error.\n", stderr);
+		exit(1);
+	}
 
 	unsigned char* header = new unsigned char[54];
 
@@ -31,6 +36,12 @@ void bmpRead(char filename[], int ***red, int ***green, int ***blue, int *height
 
 	int w = *width = *(int*)&header[18];
 	int h = *height = *(int*)&header[22];
+	short c = *(short*)&header[28];
+
+	if (c != 24) {
+		fprintf(stderr, "BMP image depth must be 24.\n");
+		exit(-1);
+	}
 
 	unsigned char *img = new unsigned char[3 * w*h];
 	memset(img, 0, 3 * w*h);
@@ -68,7 +79,10 @@ void bmpRead_1c(char filename[], int ***data) {
 
 	FILE *f;
 	fopen_s(&f, filename, "rb");
-
+	if (f == NULL) {
+		fputs("Image file read error.\n", stderr);
+		exit(1);
+	}
 	unsigned char* header = new unsigned char[54];
 
 	fread(header, sizeof(unsigned char), 54, f);
