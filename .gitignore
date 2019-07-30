@@ -34,3 +34,10 @@
 Debug
 Release
 *.bin
+*.bmp
+*.jpc
+*.pnm
+*.pgm
+/digital_cam
+/kodak
+/medical

@@ -18,15 +18,6 @@
     <ClCompile Include="src\BMP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\cabac.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dct.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lifting.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,15 +33,12 @@
     <ClCompile Include="src\encoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\hierarchicalcoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\BMP.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\global.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lifting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pgm_io.h">
@@ -63,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\encoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hierarchicalcoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

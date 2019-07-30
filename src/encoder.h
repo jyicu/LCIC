@@ -12,36 +12,23 @@
 #define CLIP255(x)	MAX(0, MIN((x), 255))
 #define ROUND(x)	((int)((x)+0.5))
 #define UINT8(x)	CLIP255(ROUND(x))
+//#define MAP(res)    res >= 0 ? 2 * res : -2 * res - 1;
+//#define UNMAP(sym)  (sym % 2 ==0) ? sym/2 : (sym+1)/2 * (-1);
 
+#define NUM_CTX 6*3
 
 template <typename T>
 T **alloc2D(int height, int width);
 template <typename T>
 void free2D(T **p);
 
-class Hierarchical_coder {
-public:
-	Hierarchical_coder(char filename[]);
-	~Hierarchical_coder();
-
-	int run();
-
-private:
-	int height, width;
-
-	int ** Y;
-	int ** U_o1, ** U_o2, ** U_e1, ** U_e2;
-	int ** V_o1, ** V_o2, ** V_e1, ** V_e2;
-	FILE fp;
-};
-
 
 class Encoder {
 public:
-	Encoder(int ** I, int T, int K, int height, int width);
+	Encoder(int ** X_o, int ** X_e, int T, int K, int* symmax, int height, int width);
 	~Encoder();
-	
-	int run();
+
+	int run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp);
 
 private:
 	int height, width;
@@ -51,14 +38,40 @@ private:
 	int ** sigma;
 	bool ** Dir;
 	int * q;
+	int* symMax;
 
 	void init();
 	void set_local_activity();
 	void context_modeling();
 	int context(int x, int y);
-	void encodeMag(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
+	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
+	void encodeMag(unsigned int sym, int ctx, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
+	bool eitherHOR(int x, int y);
 };
 
 
+class Decoder {
+public:
+	Decoder(int **X_e, int T, int K, int* symmax, int height, int width);
+	~Decoder();
 
+	int** run(Arithmetic_Codec* pCoder, Adaptive_Data_Model* pDm, FILE *fp);
 
+private:
+	int height, width;
+	int T, K;
+	int ** X_e;
+	int ** X_o;
+	int ** sigma;
+	bool ** Dir;
+	int * q;
+	int* symMax;
+
+	void init();
+	void set_local_activity();
+	void context_modeling();
+	int context(int x, int y);
+	void initCoder(Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm, FILE *fp);
+	unsigned int decodemag(int ctx, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm);
+	bool eitherHOR(int x, int y);
+};

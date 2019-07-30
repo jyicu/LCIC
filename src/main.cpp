@@ -2,18 +2,18 @@
 #include "stdlib.h"
 #include "math.h"
 #include "assert.h"
-#include <windows.h>
+#include <vector>
+#include <iostream>
 
 #include "acfile\arithmetic_codec.h"
 #include "BMP.h"
 #include "preprocess.h"
 #include "encoder.h"
+#include "hierarchicalcoder.h"
 
 #pragma warning(disable: 4996)
 
 typedef unsigned char UINT8;
-
-#define NUM_CTX	10
 
 #define MAX(x,y)	((x)>(y) ? (x) : (y))
 #define MIN(x,y)	((x)<(y) ? (x) : (y))
@@ -25,198 +25,236 @@ typedef unsigned char UINT8;
 #define ROUND(x)	((int)((x)+0.5))
 #define UINT8(x)	CLIP255(ROUND(x))
 
-void encodeMag0(int mag, Arithmetic_Codec *pCoder, Adaptive_Data_Model *pDm) {
-	int symMax = 10;
-
-	if (mag >= symMax) {
-		pCoder->encode(symMax, *pDm);
-		mag -= symMax;
-		pCoder->put_bit(mag & 1);
-		encodeMag0(mag >> 1, pCoder, pDm);
-	}
-	else {
-		pCoder->encode(mag, *pDm);
-	}
-}
-
-int encode_odd(FILE *fp, int **R, int **G, int **B, int height, int width) {
-	Arithmetic_Codec coder;
-	Adaptive_Data_Model dm[NUM_CTX];
-	int ctxCnt[NUM_CTX];
-
-	int y, x;
-	int numPix = 0;
-
-	for (int i = 0; i<NUM_CTX; i++) {
-		dm[i].set_alphabet(11);
-		dm[i].set_distribution(0.7);
-		ctxCnt[i] = 0;
-	}
-
-	int size = width * height;
-	coder.set_buffer(size);
-	coder.start_encoder();
-
-	// first row
-
-	// middle rows
-	for (y = 1; y < height-1; y++) {
-		for (x = 1; x < width-1; x += 2) {
-			float sumG = G[y - 1][x - 1] + G[y - 1][x] + G[y - 1][x + 1] + G[y][x - 1] + G[y][x + 1] + G[y + 1][x - 1] + G[y + 1][x + 1];
-			float sumR = R[y - 1][x - 1] + R[y - 1][x] + R[y - 1][x + 1] + R[y][x - 1] + R[y][x + 1] + R[y + 1][x - 1] + R[y + 1][x + 1];
-			float sumG2 = (float)G[y - 1][x - 1] * G[y - 1][x - 1] + G[y - 1][x] * G[y - 1][x] + G[y - 1][x + 1] * G[y - 1][x + 1] + G[y][x - 1] * G[y][x - 1]
-				+ G[y][x + 1] * G[y][x + 1] + G[y + 1][x - 1] * G[y + 1][x - 1] + G[y + 1][x + 1] * G[y + 1][x + 1];
-			float sumR2 = (float)R[y - 1][x - 1] * R[y - 1][x - 1] + R[y - 1][x] * R[y - 1][x] + R[y - 1][x + 1] * R[y - 1][x + 1] + R[y][x - 1] * R[y][x - 1]
-				+ R[y][x + 1] * R[y][x + 1] + R[y + 1][x - 1] * R[y + 1][x - 1] + R[y + 1][x + 1] * R[y + 1][x + 1];
-			float sumGR = (float)G[y - 1][x - 1] * R[y - 1][x - 1] + G[y - 1][x] * R[y - 1][x] + G[y - 1][x + 1] * R[y - 1][x + 1] + G[y][x - 1] * R[y][x - 1]
-				+ G[y][x + 1] * R[y][x + 1] + G[y + 1][x - 1] * R[y + 1][x - 1] + G[y + 1][x + 1] * R[y + 1][x + 1];
-
-			// correlation coefficient and parameters (a,b) for model (R=aG+b)
-			float CC = (7.0*sumGR - sumG * sumR) / sqrt((7.0*sumG2 - sumG * sumG)*(7.0*sumR2 - sumR * sumR));
-			float a = (7.0*sumGR - sumG * sumR) / (7.0*sumG2 - sumG * sumG);
-			float b = (sumR - a * sumG) / 7.0;	// typo in the paper(interband CALIC)
-
-			int pred;
-
-			if (ABS(a) <0.1 || ABS(CC)<0.5) {
-				pred = CLIP255(ROUND(sumR / 7.0));
-			}
-			else {
-				pred = CLIP255(ROUND(a*G[y][x] + b));
-			}
-			int res = R[y][x] - pred;
-			int sym = res >= 0 ? 2 * res : -2 * res - 1;
-
-			//int ctx = CLIP(10 * (ABS(CC) - 0.4), 0, NUM_CTX - 1);
-			int ctx = CLIP(ABS(R[y][x-1]-R[y][x+1])/4, 0, NUM_CTX - 1);
-			
-			encodeMag0(sym, &coder, &dm[ctx]);
-
-			numPix++;
-		}
-	}
-
-	// last col
-
-	// last row
-	
-	int bytes = coder.write_to_file(fp);
-	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / numPix);
-
-	return bytes;
-}
-
-
-void main_(int argc, char *argv[]) {
-	//char infile[] = "lena.bmp";
-	char infile[] = "SS15-17680;1;A1;1_crop3.bmp";
-	char outfile[] = "lev2.bmp";
-	char codefile[] = "code.bin";
-	char codefile_out[] = "code_out.bin";
-	FILE *fp;
-
-	int **R, **G, **B;
-
-	int height, width;
-
-	bmpRead(infile, &R, &G, &B, &height, &width);
-
-	assert(height% 2 == 0);
-	assert(width % 2 == 0);
-
-	check_result();
-
-	int **R2 = alloc2D(height/2, width);
-	int **G2 = alloc2D(height/2, width);
-	int **B2 = alloc2D(height/2, width);
-
-	for (int y = 0; y < height; y++) {
-		for (int x =0; x < width ; x+=1) {
-			R2[y/2][x] = R[y][x];
-			G2[y/2][x] = G[y][x];
-			B2[y/2][x] = B[y][x];
-		}
-	}
-	bmpWrite(outfile, R2, G2, B2, height/2, width);
-
-	if (!(fp = fopen(codefile, "wb"))) {
-		fprintf(stderr, "Code file open error.\n");
-		exit(-1);
-	}
-
-	int bytes = encode_odd(fp, R, G, B, height, width);
-
-//	printf("%d bytes. %f bpp\n", bytes, 8.0*bytes / (height - 2) / (width / 2-1));
-
-	fclose(fp);
-	free2D(R);
-	free2D(G);
-	free2D(B);
-	free2D(R2);
-	free2D(G2);
-	free2D(B2);
-}
-
-
-/* TODO
-YUV로 변환해서 decomposition
-last col, first/last row 처리
-계산 최적화
-16bit version
-res->sym 최적화
-heavy-tail pdf
-context 최적화 -> 2차원?
-
-medical image는 흑백적 위주 -> 이걸 context로?
-의료영상에 적합한 트랜스폼 찾기 (G+R/2, R-G, B)?
-
-큰 파일 처리
-*/
-
-int test_Kodak() {
+int test_Kodak(int T, int K) {
 	int num_files = 24;
-	int bytes = 0;
-	int num_pix = 0;
+	float bpp = 0;
+
 	for (int i = 0; i < num_files; i++) {
 		char filename[20];
-		sprintf(filename, "./Kodak/kodim%d.bmp",i+1);
-		Hierarchical_coder coder(filename);
-		bytes += coder.run();
-		num_pix;
+		sprintf(filename, "./Kodak/kodim%02d.bmp", i + 1);
+		Hierarchical_coder coder(filename, T, K);
+		bpp += coder.run();
 	}
-	float avg_bpp = float(bytes) / num_pix;
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "================ Kodak ================" << std::endl;
+	printf("(%d, %d)", T, K);
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Kodak ================" << std::endl;
+
 	return 0;
 }
 
+int test_classic(int T, int K) {
+	int num_files = 4;
+	float bpp = 0;
 
+	Hierarchical_coder coder1("./classic/lena.bmp", T, K);
+	bpp += coder1.run();
 
-int main() {
-	
-	char infile[] = "./Kodak/kodim05.bmp"; //SS15-17680;1;A1;1_crop3.bmp";
-	char outfile[] = "lev2.bmp";
-	char codefile[] = "code.bin";
-	FILE *fp;
+	Hierarchical_coder coder2("./classic/peppers.bmp", T, K);
+	bpp += coder2.run();
 
-	int **R;
-	int **G;
-	int **B;
-	int **Y;
-	int **U;
-	int **V;
+	Hierarchical_coder coder3("./classic/mandrill.bmp", T, K);
+	bpp += coder3.run();
+
+	Hierarchical_coder coder4("./classic/barbara.bmp", T, K);
+	bpp += coder4.run();
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "================ Classic ================" << std::endl;
+	printf("(%d, %d)", T, K);
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Classic ================" << std::endl;
+
+	return 0;
+}
+
+int test_medical(int T, int K) {
+
+	int num_files = 8;
+	float bpp = 0;
+
+	Hierarchical_coder coder1("./medical/[0]pet1.bmp", T, K);
+	bpp += coder1.run();
+
+	Hierarchical_coder coder2("./medical/[0]pet2.bmp", T, K);
+	bpp += coder2.run();
+
+	Hierarchical_coder coder3("./medical/[0]pet3.bmp", T, K);
+	bpp += coder3.run();
+
+	Hierarchical_coder coder4("./medical/[1]eye1.bmp", T, K);
+	bpp += coder4.run();
+
+	Hierarchical_coder coder5("./medical/[1]eye2.bmp", T, K);
+	bpp += coder5.run();
+
+	Hierarchical_coder coder6("./medical/[2]eyeground.bmp", T, K);
+	bpp += coder6.run();
+
+	Hierarchical_coder coder7("./medical/endoscope1.bmp", T, K);
+	bpp += coder7.run();
+
+	Hierarchical_coder coder8("./medical/endoscope2.bmp", T, K);
+	bpp += coder8.run();
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "================ Medical ================" << std::endl;
+	printf("(%d, %d)", T, K);
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Medical ================" << std::endl;
+
+	return 0;
+}
+
+int test_digital_cam(int T, int K) {
+	int num_files = 8;
+	float bpp = 0;
+
+	Hierarchical_coder coder1("./digital_cam/berry.bmp", T, K);
+	bpp += coder1.run();
+
+	Hierarchical_coder coder2("./digital_cam/ceiling.bmp", T, K);
+	bpp += coder2.run();
+
+	Hierarchical_coder coder3("./digital_cam/fireworks.bmp", T, K);
+	bpp += coder3.run();
+
+	Hierarchical_coder coder4("./digital_cam/flamingo.bmp", T, K);
+	bpp += coder4.run();
+
+	Hierarchical_coder coder5("./digital_cam/flower.bmp", T, K);
+	bpp += coder5.run();
+
+	Hierarchical_coder coder6("./digital_cam/locks.bmp", T, K);
+	bpp += coder6.run();
+
+	Hierarchical_coder coder7("./digital_cam/park.bmp", T, K);
+	bpp += coder7.run();
+
+	Hierarchical_coder coder8("./digital_cam/sunset.bmp", T, K);
+	bpp += coder8.run();
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "================ Digital Cam ================" << std::endl;
+	printf("(%d, %d)", T, K);
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+	std::cout << "================ Digital Cam ================" << std::endl;
+
+	return 0;
+}
+
+float run_jasper(char* filename, char* filename_jpc) {
+
+	int **R, **G, **B;
 	int height, width;
 
-	bmpRead(infile, &R, &G, &B, &height, &width);
+	bmpRead(filename, &R, &G, &B, &height, &width);
 
-	RGB2YUV(&R, &G, &B, &Y, &U, &V, &height, &width);
-	Encoder enc(U,3,6,height,width);
-	enc.run();
+	char command[128];
+	sprintf(command, "jasper.exe --input %s --output %s --output-format jpc", filename, filename_jpc);
+	system(command);
 
+	struct stat st;
+	stat(filename_jpc, &st);
 
-	free2D(R);
-	free2D(G);
-	free2D(B);
-	free2D(Y);
-	free2D(U);
-	free2D(V);
+	int code_bytes = st.st_size;
+
+	float bpp = 8.0 * code_bytes / (width*height);
+
+	printf("%d bytes. %f bpp\n", code_bytes, bpp);
+
+	return bpp;
+}
+
+int test_kodak_jasper() {
+
+	int num_files = 24;
+	float bpp = 0;
+
+	char filename[20];
+	char filename_jpc[20];
+
+	for (int i = 0; i < num_files; i++) {
+		if (i < 9) {
+			sprintf(filename, "./Kodak/kodim0%d.pnm", i + 1);
+			sprintf(filename_jpc, "./result/kodim0%d.jpc", i + 1);
+		}
+		else {
+			sprintf(filename, "./Kodak/kodim%d.pnm", i + 1);
+			sprintf(filename_jpc, "./result/kodim%d.jpc", i + 1);
+		}
+		
+		printf("==== Image : %s ====\n", filename);
+
+		bpp += run_jasper(filename, filename_jpc);
+
+	}
+
+	float avg_bpp = bpp / float(num_files);
+
+	std::cout << "Average bpp : " << avg_bpp << "bpp" << std::endl;
+
 	return 0;
+}
+
+void printUsage(char *s) {
+	printf("Usage: %s e [source file (bmp)] [compressed file (bin)]\n", s);
+	printf("Usage: %s d [compressed file (bin)] [decoded file (bmp)]\n", s);
+}
+
+void runEncoder(char *infile, char *codefile) {
+	int T = 3;
+	int K = 6;
+	Hierarchical_coder hc(infile, codefile, T, K);
+	hc.run();
+
+}
+
+void runDecoder(char *codefile, char *outfile) {
+	Hierarchical_decoder hd;
+	hd.run(codefile, outfile);
+}
+
+void main(int argc, char *argv[]) {
+	if (argc == 4 && argv[1][0] == 'e') {
+		runEncoder(argv[2], argv[3]);
+	}
+	else if (argc == 4 && argv[1][0] == 'd') {
+		runDecoder(argv[2], argv[3]);
+	}
+	else {
+		printUsage(argv[0]);
+	}
+}
+
+
+void test() {
+
+	char infile[] = "./classic/lena.bmp";
+
+	int T = 3;
+	int K = 6;
+
+	//test_Kodak(T,K);
+	//test_medical(T, K);
+	//test_classic(T, K);;
+	//test_digital_cam(T, K);
+
+	//test_kodak_jasper();
+	//run_jasper(infile, "result/mandrill.jpc");
+	//check_result();
+
+	Hierarchical_coder hc(infile, T, K);
+	hc.run();
+
+	Hierarchical_decoder hd;
+	hd.run("code.bin", "out.bmp");
+	
+	return;
 }
