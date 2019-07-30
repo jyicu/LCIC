@@ -5,14 +5,13 @@ This is an implementation of "HIERARCHICAL PREDICTION AND CONTEXT ADAPTIVE CODIN
 
 [project page](http://ispl.snu.ac.kr/light4u/project/LCIC/)
 
+Requirement
+-----------
 
+This code requires jasper.exe https://www.ece.uvic.ca/~frodo/jasper/
 
-## Requirement
-This code requires jasper.exe <https://www.ece.uvic.ca/~frodo/jasper/>
-
-
-
-## Usage
+Usage
+-----
 
 ### Encode
 
