@@ -38,3 +38,6 @@ Release
 *.jpc
 *.pnm
 *.pgm
+/digital_cam
+/kodak
+/medical
