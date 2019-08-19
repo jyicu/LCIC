@@ -3,7 +3,7 @@
 class Hierarchical_coder {
 public:
 	Hierarchical_coder(char filename[], char codename[], int T, int K);
-	Hierarchical_coder(char filename[], int _T, int _K);
+	Hierarchical_coder(char filename[], int _T, int _K) : Hierarchical_coder(filename, "code.bin", _T, _K) {};
 	~Hierarchical_coder();
 
 	float run();

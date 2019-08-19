@@ -119,10 +119,6 @@ Hierarchical_coder::Hierarchical_coder(char filename[], char codename[], int _T,
 	if(print) printf("(T, K, Height, Width) = (%d, %d, %d, %d)\n", T, K, height, width);
 }
 
-Hierarchical_coder::Hierarchical_coder(char filename[], int _T, int _K) {
-	Hierarchical_coder(filename, "code.bin", _T, _K);
-}
-
 Hierarchical_coder::~Hierarchical_coder() {
 	free2D(Y);
 	free2D(U_e1);
